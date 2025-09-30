@@ -294,6 +294,9 @@ elements.submitSignalBtn.addEventListener('click', encryptAndSubmitSignal);
   input.addEventListener('input', () => checkFormValidity({ account, escrowAddress, tokensApproved }));
 });
 
+// Refresh network key status when node API URL changes
+elements.nodeApiUrlInput.addEventListener('input', fetchNetworkKey);
+
 // Auto-calculate reward amount based on token amount
 elements.tokenAmountInput.addEventListener('input', () => {
   const tokenAmount = parseFloat(elements.tokenAmountInput.value);
