@@ -4,11 +4,16 @@ export async function fetchNetworkKey(nodeApiUrl) {
   const attestResponse = await fetch(`${nodeApiUrl}/attest`);
   const attestData = await attestResponse.json();
 
+  // Fetch health data to get chainId
+  const healthResponse = await fetch(`${nodeApiUrl}/`);
+  const healthData = await healthResponse.json();
+
   const fullKey = attestData.globalKey;
   return {
     prefix: `${fullKey.slice(0, 6)}...${fullKey.slice(-4)}`,
     attested: attestData.attested || false,
     debug: attestData.isDebug || attestData.debug || false,
+    chainId: healthData.chainId,
     fullKey
   };
 }

@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
-import { elements, showStatus, updateNetworkKeyDisplay, checkFormValidity } from './ui.js';
+import { elements, showStatus, updateNetworkKeyDisplay, checkFormValidity, getChainName } from './ui.js';
 import { loadArtifacts, getArtifacts, connectWallet as walletConnect, predictNextContractAddress } from './wallet.js';
 import { getTokenDecimals, parseTokenAmount, approveTokens as tokenApprove, getTokenBalance, getAllowance } from './token.js';
 import { deployEscrow, checkEscrowFunded } from './escrow.js';
 import { fetchNetworkKey as fetchKey, encryptAndSubmitSignal as submitSignal } from './signal.js';
 
-let provider, signer, account, escrowAddress, tokensApproved;
-let networkKeyStatus = { prefix: null, attested: false, debug: false };
+let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
+let networkKeyStatus = { prefix: null, attested: false, debug: false, chainId: null };
 
 async function fetchNetworkKey() {
   try {
@@ -17,8 +17,9 @@ async function fetchNetworkKey() {
     networkKeyStatus.prefix = keyData.prefix;
     networkKeyStatus.attested = keyData.attested;
     networkKeyStatus.debug = keyData.debug;
+    networkKeyStatus.chainId = keyData.chainId;
 
-    updateNetworkKeyDisplay(networkKeyStatus);
+    updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
   } catch (error) {
     console.error('Failed to fetch network key:', error);
     networkKeyStatus.prefix = 'Error';
@@ -35,7 +36,13 @@ async function connectWallet() {
     signer = walletData.signer;
     account = walletData.account;
 
-    elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+    // Get wallet chain ID
+    const network = await provider.getNetwork();
+    walletChainId = Number(network.chainId);
+    updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
+
+    const chainName = getChainName(walletChainId);
+    elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${account.slice(-4)} (${chainName})`;
     elements.connectWalletBtn.disabled = false;
 
     elements.recipientAddressInput.placeholder = account;

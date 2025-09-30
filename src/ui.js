@@ -27,10 +27,10 @@ export function showStatus(message, type) {
   addLogEntry(message, type);
 }
 
-export function updateNetworkKeyDisplay(networkKeyStatus) {
+export function updateNetworkKeyDisplay(networkKeyStatus, walletChainId = null) {
   if (!elements.networkKeyDisplay) return;
 
-  const { prefix, attested, debug } = networkKeyStatus;
+  const { prefix, attested, debug, chainId } = networkKeyStatus;
 
   if (prefix === 'Error') {
     elements.networkKeyDisplay.textContent = 'Offline';
@@ -38,12 +38,32 @@ export function updateNetworkKeyDisplay(networkKeyStatus) {
   } else if (prefix) {
     const attestedText = attested ? 'yes' : 'no';
     const debugText = debug ? 'yes' : 'no';
-    elements.networkKeyDisplay.textContent = `Key: ${prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
+    const chainName = getChainName(chainId);
+
+    const chainMismatch = walletChainId && chainId !== walletChainId;
+    const chainColor = chainMismatch ? '#ff6b6b' : '#999';
+    const tooltip = chainMismatch ? ' title="Chain does not match wallet"' : '';
+
+    elements.networkKeyDisplay.innerHTML = `Chain: <span style="color: ${chainColor}"${tooltip}>${chainName}</span> | Key: ${prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
     elements.networkKeyDisplay.style.color = '#999';
   } else {
     elements.networkKeyDisplay.textContent = 'Key: Loading...';
     elements.networkKeyDisplay.style.color = '#999';
   }
+}
+
+export function getChainName(chainId) {
+  const chainNames = {
+    1: 'Mainnet',
+    11155111: 'Sepolia',
+    5: 'Goerli',
+    17000: 'Holesky',
+    137: 'Polygon',
+    10: 'Optimism',
+    42161: 'Arbitrum',
+    8453: 'Base'
+  };
+  return chainNames[chainId] || `Chain ${chainId}`;
 }
 
 export function checkFormValidity(state) {
