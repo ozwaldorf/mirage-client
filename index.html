@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirage Privacy Client</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        h1 {
+            margin-top: 0;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .header-bottom {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .node-api-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+        .node-api-group label {
+            margin: 0;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        .network-key-status {
+            font-size: 12px;
+            color: #999;
+            font-family: monospace;
+        }
+        .node-api-input {
+            flex: 1;
+            max-width: 400px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #333;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background: #3d3d3d;
+            color: #e0e0e0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .actions-container button {
+            flex: 1;
+        }
+        #connectWallet {
+            min-width: 150px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background: #1e4620;
+            color: #7cfc00;
+            display: block;
+        }
+        .status.error {
+            background: #4a1a1a;
+            color: #ff6b6b;
+            display: block;
+        }
+        .status.info {
+            background: #1a3a4a;
+            color: #5dade2;
+            display: block;
+        }
+        .connected {
+            color: #28a745;
+        }
+        .actions-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>Mirage SGX Client</h1>
+                <button id="connectWallet">Connect Wallet</button>
+            </div>
+            <div class="header-bottom">
+                <div class="node-api-group">
+                    <label for="nodeApiUrl">Node API:</label>
+                    <input type="text" id="nodeApiUrl" class="node-api-input" placeholder="http://localhost:8000" value="http://localhost:8000">
+                </div>
+                <div id="networkKeyDisplay" class="network-key-status">Key: Loading...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Signal Options</h2>
+            <div class="input-group">
+                <label for="tokenContract">Token Contract Address:</label>
+                <input type="text" id="tokenContract" placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86" value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86">
+            </div>
+            <div class="input-group">
+                <label for="tokenAmount">Token Amount:</label>
+                <input type="text" id="tokenAmount" placeholder="100">
+            </div>
+            <div class="input-group">
+                <label for="rewardAmount">Reward Amount:</label>
+                <input type="text" id="rewardAmount" placeholder="10">
+            </div>
+            <div class="input-group">
+                <label for="recipientAddress">Recipient Address:</label>
+                <input type="text" id="recipientAddress" placeholder="0x...">
+            </div>
+            <div class="input-group">
+                <label for="ackUrl">Acknowledgement URL:</label>
+                <input type="text" id="ackUrl" placeholder="http://your-server.com/ack" value="http://localhost:3001/ack">
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #444;">
+
+            <div class="actions-container">
+                <button id="approveBtn" disabled>Approve Tokens</button>
+                <button id="deployBondBtn" disabled>Deploy Escrow</button>
+                <button id="submitSignalBtn" disabled>Submit Signal</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Console Log</h2>
+            <div id="consoleLog" style="font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+</body>
+</html>

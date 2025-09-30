@@ -1,0 +1,303 @@
+import { ethers } from 'ethers';
+import { elements, showStatus, updateNetworkKeyDisplay, checkFormValidity } from './ui.js';
+import { loadArtifacts, getArtifacts, connectWallet as walletConnect, predictNextContractAddress } from './wallet.js';
+import { getTokenDecimals, parseTokenAmount, approveTokens as tokenApprove, getTokenBalance, getAllowance } from './token.js';
+import { deployEscrow, checkEscrowFunded } from './escrow.js';
+import { fetchNetworkKey as fetchKey, encryptAndSubmitSignal as submitSignal } from './signal.js';
+
+let provider, signer, account, escrowAddress, tokensApproved;
+let networkKeyStatus = { prefix: null, attested: false, debug: false };
+
+async function fetchNetworkKey() {
+  try {
+    const nodeApiUrl = elements.nodeApiUrlInput.value;
+    if (!nodeApiUrl) return;
+
+    const keyData = await fetchKey(nodeApiUrl);
+    networkKeyStatus.prefix = keyData.prefix;
+    networkKeyStatus.attested = keyData.attested;
+    networkKeyStatus.debug = keyData.debug;
+
+    updateNetworkKeyDisplay(networkKeyStatus);
+  } catch (error) {
+    console.error('Failed to fetch network key:', error);
+    networkKeyStatus.prefix = 'Error';
+    updateNetworkKeyDisplay(networkKeyStatus);
+  }
+}
+
+async function connectWallet() {
+  try {
+    await loadArtifacts();
+
+    const walletData = await walletConnect();
+    provider = walletData.provider;
+    signer = walletData.signer;
+    account = walletData.account;
+
+    elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+    elements.connectWalletBtn.disabled = false;
+
+    elements.recipientAddressInput.placeholder = account;
+
+    // Set token amount placeholder to wallet balance
+    if (elements.tokenContractInput.value) {
+      try {
+        const decimals = await getTokenDecimals(elements.tokenContractInput.value, signer);
+        const balance = await getTokenBalance(elements.tokenContractInput.value, account, signer);
+        const balanceFormatted = ethers.formatUnits(balance, decimals);
+        elements.tokenAmountInput.placeholder = balanceFormatted;
+        elements.rewardAmountInput.placeholder = (parseFloat(balanceFormatted) * 0.05).toString();
+
+        // Check if already approved and deployed
+        if (elements.tokenAmountInput.value && elements.rewardAmountInput.value) {
+          const nonce = await provider.getTransactionCount(account);
+          const tokenAmount = parseTokenAmount(elements.tokenAmountInput.value, decimals);
+          const rewardAmount = parseTokenAmount(elements.rewardAmountInput.value, decimals);
+          const totalAmount = tokenAmount + rewardAmount;
+
+          // Check last 2 nonces for deployed contract
+          let foundContract = false;
+          for (let i = 0; i < 2; i++) {
+            const checkNonce = nonce - i;
+            if (checkNonce < 0) break;
+
+            const checkAddress = predictNextContractAddress(account, checkNonce);
+            const code = await provider.getCode(checkAddress);
+
+            if (code !== '0x') {
+              // Check if funded by calling funded() method
+              const isFunded = await checkEscrowFunded(checkAddress, getArtifacts(), signer);
+
+              if (isFunded) {
+                escrowAddress = checkAddress;
+                showStatus(`Contract already deployed and funded at ${checkAddress}`, 'success');
+                foundContract = true;
+                break;
+              } else {
+                showStatus(`Contract at ${checkAddress} exists but not funded`, 'info');
+              }
+            }
+          }
+
+          if (!foundContract) {
+            // Check if approved for next deployment (nonce + 1)
+            const nextNonceAddress = predictNextContractAddress(account, nonce + 1);
+            const allowance = await getAllowance(elements.tokenContractInput.value, account, nextNonceAddress, signer);
+
+            if (allowance >= totalAmount) {
+              tokensApproved = true;
+              showStatus(`Already approved for ${nextNonceAddress}`, 'success');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch token balance:', error);
+      }
+    }
+
+    checkFormValidity({ account, escrowAddress, tokensApproved });
+  } catch (error) {
+    showStatus(`Error: ${error.message}`, 'error');
+  }
+}
+
+async function approveTokens() {
+  try {
+    showStatus('Approving tokens...', 'info');
+
+    const tokenAddress = elements.tokenContractInput.value;
+    const tokenAmount = elements.tokenAmountInput.value;
+    const rewardAmount = elements.rewardAmountInput.value;
+
+    if (!tokenAddress || !tokenAmount || !rewardAmount) {
+      throw new Error('Please fill in all fields');
+    }
+
+    const decimals = await getTokenDecimals(tokenAddress, signer);
+    const totalAmount = parseTokenAmount(tokenAmount, decimals) + parseTokenAmount(rewardAmount, decimals);
+
+    // Get current nonce and predict next contract address
+    const nonce = await provider.getTransactionCount(account);
+    const predictedEscrowAddress = predictNextContractAddress(account, nonce + 1);
+
+    showStatus(`Predicted escrow address: ${predictedEscrowAddress}`, 'info');
+
+    // Approve for predicted escrow contract address
+    const tx = await tokenApprove(tokenAddress, predictedEscrowAddress, totalAmount, signer);
+    showStatus(`Waiting for approval transaction: ${tx.hash}`, 'info');
+
+    await tx.wait(1);
+    tokensApproved = true;
+    checkFormValidity({ account, escrowAddress, tokensApproved });
+    showStatus(`Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`, 'success');
+  } catch (error) {
+    showStatus(`Error: ${error.message}`, 'error');
+  }
+}
+
+async function deployAndBondEscrow() {
+  try {
+    showStatus('Fetching bytecode...', 'info');
+
+    const tokenAddress = elements.tokenContractInput.value;
+    const tokenAmount = elements.tokenAmountInput.value;
+    const rewardAmount = elements.rewardAmountInput.value;
+    const recipientAddress = elements.recipientAddressInput.value;
+
+    if (!tokenAddress || !tokenAmount || !rewardAmount || !recipientAddress) {
+      throw new Error('Please fill in all fields');
+    }
+
+    const decimals = await getTokenDecimals(tokenAddress, signer);
+    const transferAmount = parseTokenAmount(tokenAmount, decimals);
+    const rewardAmountParsed = parseTokenAmount(rewardAmount, decimals);
+
+    showStatus('Deploying escrow contract...', 'info');
+
+    escrowAddress = await deployEscrow(
+      getArtifacts(),
+      tokenAddress,
+      recipientAddress,
+      transferAmount,
+      rewardAmountParsed,
+      signer
+    );
+
+    showStatus(`Escrow deployed at: ${escrowAddress}`, 'success');
+    checkFormValidity({ account, escrowAddress, tokensApproved });
+  } catch (error) {
+    showStatus(`Error: ${error.message}`, 'error');
+    console.error(error);
+  }
+}
+
+async function encryptAndSubmitSignal() {
+  try {
+    if (!escrowAddress) {
+      throw new Error('Please deploy and bond escrow first');
+    }
+
+    showStatus('Fetching global key from node...', 'info');
+
+    const nodeApiUrl = elements.nodeApiUrlInput.value;
+    const tokenAddress = elements.tokenContractInput.value;
+    const tokenAmount = elements.tokenAmountInput.value;
+    const rewardAmount = elements.rewardAmountInput.value;
+    const recipientAddress = elements.recipientAddressInput.value;
+    const ackUrl = elements.ackUrlInput.value;
+
+    showStatus('Encrypting signal...', 'info');
+
+    const decimals = await getTokenDecimals(tokenAddress, signer);
+    const transferAmount = parseTokenAmount(tokenAmount, decimals);
+    const rewardAmountParsed = parseTokenAmount(rewardAmount, decimals);
+
+    showStatus('Submitting signal to node...', 'info');
+
+    const result = await submitSignal(
+      nodeApiUrl,
+      escrowAddress,
+      tokenAddress,
+      recipientAddress,
+      transferAmount,
+      rewardAmountParsed,
+      ackUrl
+    );
+
+    showStatus(`Signal submitted successfully! ${result}`, 'success');
+  } catch (error) {
+    showStatus(`Error: ${error.message}`, 'error');
+    console.error(error);
+  }
+}
+
+// Attempt to reconnect on load
+async function tryReconnect() {
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        await connectWallet();
+      }
+    } catch (error) {
+      console.error('Reconnection failed:', error);
+    }
+  }
+}
+
+// Handle account changes
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', async (accounts) => {
+    if (accounts.length === 0) {
+      // User disconnected wallet
+      elements.connectWalletBtn.textContent = 'Connect Wallet';
+      elements.connectWalletBtn.disabled = false;
+      elements.approveBtn.disabled = true;
+      elements.deployBondBtn.disabled = true;
+      elements.submitSignalBtn.disabled = true;
+      provider = null;
+      signer = null;
+      account = null;
+    } else {
+      // User switched accounts
+      await connectWallet();
+    }
+  });
+
+  window.ethereum.on('chainChanged', () => {
+    // Reload page on chain change
+    window.location.reload();
+  });
+}
+
+// Try to reconnect on page load
+tryReconnect();
+
+// Prefetch network key on page load
+fetchNetworkKey();
+
+// Refresh network key status every 15 seconds
+setInterval(fetchNetworkKey, 15000);
+
+// Event listeners
+elements.connectWalletBtn.addEventListener('click', async () => {
+  if (account) {
+    // Copy address to clipboard
+    try {
+      await navigator.clipboard.writeText(account);
+      const originalText = elements.connectWalletBtn.textContent;
+      elements.connectWalletBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        elements.connectWalletBtn.textContent = originalText;
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  } else {
+    await connectWallet();
+  }
+});
+elements.approveBtn.addEventListener('click', approveTokens);
+elements.deployBondBtn.addEventListener('click', deployAndBondEscrow);
+elements.submitSignalBtn.addEventListener('click', encryptAndSubmitSignal);
+
+// Add input listeners to check form validity
+[
+  elements.tokenContractInput,
+  elements.tokenAmountInput,
+  elements.rewardAmountInput,
+  elements.recipientAddressInput,
+  elements.ackUrlInput,
+  elements.nodeApiUrlInput
+].forEach(input => {
+  input.addEventListener('input', () => checkFormValidity({ account, escrowAddress, tokensApproved }));
+});
+
+// Auto-calculate reward amount based on token amount
+elements.tokenAmountInput.addEventListener('input', () => {
+  const tokenAmount = parseFloat(elements.tokenAmountInput.value);
+  if (!isNaN(tokenAmount) && tokenAmount > 0) {
+    elements.rewardAmountInput.value = (tokenAmount * 0.05).toString();
+  }
+});
