@@ -75,9 +75,47 @@ export function checkFormValidity(state) {
 
   if (state.account) {
     elements.approveBtn.disabled = !baseFieldsFilled || state.escrowAddress;
-    elements.deployBondBtn.disabled = !baseFieldsFilled ||
+
+    const deployDisabled = !baseFieldsFilled ||
       !state.tokensApproved || state.escrowAddress;
-    elements.submitSignalBtn.disabled = !signalFieldsFilled ||
-      !state.escrowAddress || !networkOnline;
+    elements.deployBondBtn.disabled = deployDisabled;
+
+    // Update deploy button tooltip based on reason for being disabled
+    if (deployDisabled && state.account && !state.escrowAddress) {
+      if (!state.tokensApproved) {
+        elements.deployBondBtn.title = "Tokens Not Approved Yet";
+      } else {
+        elements.deployBondBtn.title = "";
+      }
+    } else {
+      elements.deployBondBtn.title = "";
+    }
+
+    if (!elements.deployBondBtn.classList.contains("success") &&
+        !elements.deployBondBtn.classList.contains("waiting")) {
+      elements.deployBondBtn.textContent = "Deploy Escrow";
+    }
+
+    const submitDisabled = !signalFieldsFilled || !state.escrowAddress ||
+      !networkOnline;
+    elements.submitSignalBtn.disabled = submitDisabled;
+
+    // Update submit signal button tooltip based on reason for being disabled
+    if (submitDisabled && state.account) {
+      if (!state.escrowAddress) {
+        elements.submitSignalBtn.title = "Contract Not Deployed";
+      } else if (!networkOnline) {
+        elements.submitSignalBtn.title = "Network Offline";
+      } else {
+        elements.submitSignalBtn.title = "";
+      }
+    } else {
+      elements.submitSignalBtn.title = "";
+    }
+
+    if (!elements.submitSignalBtn.classList.contains("success") &&
+        !elements.submitSignalBtn.classList.contains("waiting")) {
+      elements.submitSignalBtn.textContent = "Submit Signal";
+    }
   }
 }
