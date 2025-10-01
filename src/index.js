@@ -49,10 +49,12 @@ async function fetchNetworkKey() {
     networkKeyStatus.chainId = keyData.chainId;
 
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
   } catch (error) {
     console.error("Failed to fetch network key:", error);
     networkKeyStatus.prefix = "Error";
     updateNetworkKeyDisplay(networkKeyStatus);
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
   }
 }
 
@@ -177,7 +179,7 @@ async function connectWallet() {
       }
     }
 
-    checkFormValidity({ account, escrowAddress, tokensApproved });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
   } catch (error) {
     showStatus(`Error: ${error.message}`, "error");
   }
@@ -230,7 +232,7 @@ async function approveTokens() {
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("success");
     elements.approveBtn.textContent = "Approved";
-    checkFormValidity({ account, escrowAddress, tokensApproved });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
     showStatus(
       `Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`,
       "success",
@@ -283,7 +285,7 @@ async function deployAndBondEscrow() {
     elements.deployBondBtn.classList.add("success");
     elements.deployBondBtn.textContent = "Deployed";
     showStatus(`Escrow deployed at: ${escrowAddress}`, "success");
-    checkFormValidity({ account, escrowAddress, tokensApproved });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
   } catch (error) {
     elements.deployBondBtn.classList.remove("waiting");
     elements.deployBondBtn.classList.add("error");
@@ -430,7 +432,7 @@ elements.submitSignalBtn.addEventListener("click", encryptAndSubmitSignal);
 ].forEach((input) => {
   input.addEventListener(
     "input",
-    () => checkFormValidity({ account, escrowAddress, tokensApproved }),
+    () => checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus }),
   );
 });
 

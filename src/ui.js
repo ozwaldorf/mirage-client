@@ -70,11 +70,14 @@ export function checkFormValidity(state) {
     elements.ackUrlInput.value &&
     elements.nodeApiUrlInput.value;
 
+  const networkOnline = state.networkKeyStatus &&
+    state.networkKeyStatus.prefix !== "Error";
+
   if (state.account) {
     elements.approveBtn.disabled = !baseFieldsFilled || state.escrowAddress;
     elements.deployBondBtn.disabled = !baseFieldsFilled ||
       !state.tokensApproved || state.escrowAddress;
     elements.submitSignalBtn.disabled = !signalFieldsFilled ||
-      !state.escrowAddress;
+      !state.escrowAddress || !networkOnline;
   }
 }
