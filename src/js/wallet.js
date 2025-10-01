@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import escrowAbiFile from "../artifacts/Escrow.json";
-import bytecodeFile from "../artifacts/bytecode.hex";
+import escrowAbiFile from "../../artifacts/Escrow.json";
+import bytecodeFile from "../../artifacts/bytecode.hex";
 
 const SEPOLIA_CHAIN_ID = 11155111;
 

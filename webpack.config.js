@@ -67,7 +67,7 @@ class FetchArtifactsPlugin {
 
 module.exports = {
   target: "web",
-  entry: "./src/index.js",
+  entry: "./src/js/index.js",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",
@@ -77,7 +77,8 @@ module.exports = {
   plugins: [
     new FetchArtifactsPlugin(),
     new HtmlWebpackPlugin({
-      template: "./index.html",
+      template: "./src/index.html",
+      favicon: "./public/logo.png",
     }),
     new webpack.ProvidePlugin({
       process: "process/browser",
