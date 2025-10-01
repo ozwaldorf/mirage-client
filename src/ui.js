@@ -73,6 +73,10 @@ export function checkFormValidity(state) {
   const networkOnline = state.networkKeyStatus &&
     state.networkKeyStatus.prefix !== "Error";
 
+  const chainMatch = !state.walletChainId || !state.networkKeyStatus ||
+    !state.networkKeyStatus.chainId ||
+    state.walletChainId === state.networkKeyStatus.chainId;
+
   if (state.account) {
     elements.approveBtn.disabled = !baseFieldsFilled || state.escrowAddress;
 
@@ -97,7 +101,7 @@ export function checkFormValidity(state) {
     }
 
     const submitDisabled = !signalFieldsFilled || !state.escrowAddress ||
-      !networkOnline;
+      !networkOnline || !chainMatch;
     elements.submitSignalBtn.disabled = submitDisabled;
 
     // Update submit signal button tooltip based on reason for being disabled
@@ -106,6 +110,8 @@ export function checkFormValidity(state) {
         elements.submitSignalBtn.title = "Contract Not Deployed";
       } else if (!networkOnline) {
         elements.submitSignalBtn.title = "Network Offline";
+      } else if (!chainMatch) {
+        elements.submitSignalBtn.title = "Chain Mismatch";
       } else {
         elements.submitSignalBtn.title = "";
       }

@@ -49,12 +49,12 @@ async function fetchNetworkKey() {
     networkKeyStatus.chainId = keyData.chainId;
 
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
   } catch (error) {
     console.error("Failed to fetch network key:", error);
     networkKeyStatus.prefix = "Error";
     updateNetworkKeyDisplay(networkKeyStatus);
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
   }
 }
 
@@ -72,10 +72,9 @@ async function connectWallet() {
     walletChainId = Number(network.chainId);
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
 
-    const chainName = getChainName(walletChainId);
     elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${
       account.slice(-4)
-    } (${chainName})`;
+    }`;
     elements.connectWalletBtn.disabled = false;
 
     elements.recipientAddressInput.placeholder = account;
@@ -111,7 +110,7 @@ async function connectWallet() {
             elements.rewardAmountInput.value,
             cachedDecimals,
           );
-          const totalAmount = tokenAmount + rewardAmount;
+          const totalAmount = BigInt(tokenAmount) + BigInt(rewardAmount);
 
           // Check last 2 nonces for deployed contract
           let foundContract = false;
@@ -179,7 +178,7 @@ async function connectWallet() {
       }
     }
 
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
   } catch (error) {
     showStatus(`Error: ${error.message}`, "error");
   }
@@ -232,7 +231,7 @@ async function approveTokens() {
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("success");
     elements.approveBtn.textContent = "Approved";
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
     showStatus(
       `Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`,
       "success",
@@ -285,7 +284,7 @@ async function deployAndBondEscrow() {
     elements.deployBondBtn.classList.add("success");
     elements.deployBondBtn.textContent = "Deployed";
     showStatus(`Escrow deployed at: ${escrowAddress}`, "success");
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus });
+    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
   } catch (error) {
     elements.deployBondBtn.classList.remove("waiting");
     elements.deployBondBtn.classList.add("error");
@@ -432,17 +431,46 @@ elements.submitSignalBtn.addEventListener("click", encryptAndSubmitSignal);
 ].forEach((input) => {
   input.addEventListener(
     "input",
-    () => checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus }),
+    () => checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId }),
   );
 });
 
 // Refresh network key status when node API URL changes
 elements.nodeApiUrlInput.addEventListener("input", fetchNetworkKey);
 
+// Validate and format token amount input
+function validateTokenInput(inputElement) {
+  let value = inputElement.value;
+
+  // Allow only digits, one decimal point, and remove other characters
+  value = value.replace(/[^\d.]/g, "");
+
+  // Ensure only one decimal point
+  const parts = value.split(".");
+  if (parts.length > 2) {
+    value = parts[0] + "." + parts.slice(1).join("");
+  }
+
+  // Limit decimal places based on token decimals
+  if (cachedDecimals !== null && parts.length === 2 && parts[1].length > 0) {
+    const decimals = Number(cachedDecimals);
+    const decimalPart = parts[1].slice(0, decimals);
+    value = parts[0] + "." + decimalPart;
+  }
+
+  inputElement.value = value;
+}
+
 // Auto-calculate reward amount based on token amount
 elements.tokenAmountInput.addEventListener("input", () => {
+  validateTokenInput(elements.tokenAmountInput);
   const tokenAmount = parseFloat(elements.tokenAmountInput.value);
   if (!isNaN(tokenAmount) && tokenAmount > 0) {
     elements.rewardAmountInput.value = (tokenAmount * 0.05).toString();
+    validateTokenInput(elements.rewardAmountInput);
   }
+});
+
+elements.rewardAmountInput.addEventListener("input", () => {
+  validateTokenInput(elements.rewardAmountInput);
 });
