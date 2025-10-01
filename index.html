@@ -136,6 +136,32 @@
             gap: 10px;
             width: 100%;
         }
+        .expandable-section {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section:has(.expandable-content:not(.collapsed)) .expandable-section {
+            margin-bottom: 10px;
+        }
+        .expandable-section h2 {
+            margin: 0;
+        }
+        .expand-icon {
+            transition: transform 0.2s;
+        }
+        .expand-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        .expandable-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .expandable-content.collapsed {
+            max-height: 0 !important;
+        }
     </style>
 </head>
 <body>
@@ -154,7 +180,6 @@
         </div>
 
         <div class="section">
-            <h2>Signal Options</h2>
             <div class="input-group">
                 <label for="tokenContract">Token Contract Address:</label>
                 <input type="text" id="tokenContract" placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86" value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86">
@@ -186,9 +211,23 @@
         </div>
 
         <div class="section">
-            <h2>Console Log</h2>
-            <div id="consoleLog" style="font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+            <div class="expandable-section" onclick="toggleConsoleLog()">
+                <h2>Console Log</h2>
+                <span class="expand-icon collapsed">▼</span>
+            </div>
+            <div id="consoleLogContainer" class="expandable-content collapsed">
+                <div id="consoleLog" style="font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+            </div>
         </div>
+
+        <script>
+            function toggleConsoleLog() {
+                const container = document.getElementById('consoleLogContainer');
+                const icon = document.querySelector('.expand-icon');
+                container.classList.toggle('collapsed');
+                icon.classList.toggle('collapsed');
+            }
+        </script>
     </div>
 
 </body>
