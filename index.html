@@ -246,32 +246,6 @@
         </div>
       </div>
 
-      <div class="section" style="margin-bottom: 0;">
-        <div class="expandable-section" onclick="toggleConsoleLog()">
-          <h2>Console Log</h2>
-          <span class="expand-icon collapsed">▼</span>
-        </div>
-
-        <div id="consoleLogContainer" class="expandable-content collapsed">
-          <hr>
-          <div
-            id="consoleLog"
-            style="font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto"
-          >
-          </div>
-        </div>
-      </div>
-
-      <script>
-        function toggleConsoleLog() {
-          const container = document.getElementById(
-            "consoleLogContainer",
-          );
-          const icon = document.querySelector(".expand-icon");
-          container.classList.toggle("collapsed");
-          icon.classList.toggle("collapsed");
-        }
-      </script>
     </div>
   </body>
 </html>

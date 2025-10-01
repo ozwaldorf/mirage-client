@@ -3,7 +3,6 @@ export const elements = {
   approveBtn: document.getElementById("approveBtn"),
   deployBondBtn: document.getElementById("deployBondBtn"),
   submitSignalBtn: document.getElementById("submitSignalBtn"),
-  consoleLog: document.getElementById("consoleLog"),
   networkKeyDisplay: document.getElementById("networkKeyDisplay"),
   tokenContractInput: document.getElementById("tokenContract"),
   tokenAmountInput: document.getElementById("tokenAmount"),
@@ -14,17 +13,7 @@ export const elements = {
 };
 
 export function showStatus(message, type) {
-  const timestamp = new Date().toLocaleTimeString();
-  const entry = document.createElement("div");
-  entry.style.marginBottom = "5px";
-  entry.style.color = type === "error"
-    ? "#ff6b6b"
-    : type === "success"
-    ? "#7cfc00"
-    : "#5dade2";
-  entry.textContent = `[${timestamp}] ${message}`;
-  elements.consoleLog.appendChild(entry);
-  elements.consoleLog.scrollTop = elements.consoleLog.scrollHeight;
+  console.log(`[${type}] ${message}`);
 }
 
 export function updateNetworkKeyDisplay(
