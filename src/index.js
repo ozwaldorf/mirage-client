@@ -2,7 +2,6 @@ import { ethers } from "ethers";
 import {
   checkFormValidity,
   elements,
-  getChainName,
   showStatus,
   updateNetworkKeyDisplay,
 } from "./ui.js";
@@ -28,7 +27,7 @@ import {
 } from "./signal.js";
 
 let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
-let networkKeyStatus = {
+const networkKeyStatus = {
   prefix: null,
   attested: false,
   debug: false,
@@ -36,6 +35,60 @@ let networkKeyStatus = {
 };
 let cachedDecimals = null;
 let cachedTokenAddress = null;
+let cachedGasPriceWei = null;
+let cachedGasPriceGwei = null;
+
+async function fetchGasPrice() {
+  try {
+    // Fetch gas price from Etherscan
+    const response = await fetch(
+      "https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle",
+    );
+    const data = await response.json();
+    cachedGasPriceGwei = parseFloat(data.result.ProposeGasPrice);
+
+    // Convert to wei (1 gwei = 1e9 wei) using float math, then round and convert to BigInt
+    const gasPriceWeiFloat = cachedGasPriceGwei * 1e9;
+    cachedGasPriceWei = BigInt(Math.round(gasPriceWeiFloat));
+
+    // Recalculate reward with new gas price
+    calculateReward();
+  } catch (error) {
+    console.error("Failed to fetch gas price:", error);
+    // Default to 1.6 gwei on failure
+    cachedGasPriceGwei = 1.6;
+    cachedGasPriceWei = BigInt(Math.round(cachedGasPriceGwei * 1e9));
+    calculateReward();
+  }
+}
+
+function calculateReward() {
+  try {
+    const tokenAmount = parseFloat(elements.tokenAmountInput.value) || 0;
+
+    // ETH to USD rate: 1/4500 ETH per USD, so 4500 USD per ETH
+    // TODO: fetch this rate from uniswap contract
+    const ethToUsdRate = 4500;
+
+    // Calculate gas cost in ETH: gasPriceWei * 1056000 / 1e18
+    const gasCostEth = Number(cachedGasPriceWei * BigInt(1056000)) / 1e18;
+
+    // Convert to USD
+    const rewardUsd = (gasCostEth * ethToUsdRate) + (tokenAmount * 0.05);
+
+    // Display gas price in label (rounded to 3 decimals)
+    elements.rewardAmountLabel.textContent = `Reward = 5% fee + (${
+      cachedGasPriceGwei.toFixed(3)
+    } gwei * gas / 4500 usd per eth)`;
+
+    elements.rewardAmountInput.value = rewardUsd.toFixed(
+      Number(cachedDecimals),
+    );
+    elements.rewardAmountInput.disabled = true;
+  } catch (error) {
+    console.error("Failed to calculate reward:", error);
+  }
+}
 
 async function fetchNetworkKey() {
   try {
@@ -49,12 +102,24 @@ async function fetchNetworkKey() {
     networkKeyStatus.chainId = keyData.chainId;
 
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
+    checkFormValidity({
+      account,
+      escrowAddress,
+      tokensApproved,
+      networkKeyStatus,
+      walletChainId,
+    });
   } catch (error) {
     console.error("Failed to fetch network key:", error);
     networkKeyStatus.prefix = "Error";
     updateNetworkKeyDisplay(networkKeyStatus);
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
+    checkFormValidity({
+      account,
+      escrowAddress,
+      tokensApproved,
+      networkKeyStatus,
+      walletChainId,
+    });
   }
 }
 
@@ -179,7 +244,13 @@ async function connectWallet() {
       }
     }
 
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
+    checkFormValidity({
+      account,
+      escrowAddress,
+      tokensApproved,
+      networkKeyStatus,
+      walletChainId,
+    });
   } catch (error) {
     showStatus(`Error: ${error.message}`, "error");
   }
@@ -232,7 +303,13 @@ async function approveTokens() {
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("success");
     elements.approveBtn.textContent = "Approved";
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
+    checkFormValidity({
+      account,
+      escrowAddress,
+      tokensApproved,
+      networkKeyStatus,
+      walletChainId,
+    });
     showStatus(
       `Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`,
       "success",
@@ -285,7 +362,13 @@ async function deployAndBondEscrow() {
     elements.deployBondBtn.classList.add("success");
     elements.deployBondBtn.textContent = "Deployed";
     showStatus(`Escrow deployed at: ${escrowAddress}`, "success");
-    checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId });
+    checkFormValidity({
+      account,
+      escrowAddress,
+      tokensApproved,
+      networkKeyStatus,
+      walletChainId,
+    });
   } catch (error) {
     elements.deployBondBtn.classList.remove("waiting");
     elements.deployBondBtn.classList.add("error");
@@ -312,7 +395,6 @@ async function encryptAndSubmitSignal() {
     const tokenAmount = elements.tokenAmountInput.value;
     const rewardAmount = elements.rewardAmountInput.value;
     const recipientAddress = elements.recipientAddressInput.value;
-    const ackUrl = elements.ackUrlInput.value;
 
     showStatus("Encrypting signal...", "info");
 
@@ -333,7 +415,6 @@ async function encryptAndSubmitSignal() {
       recipientAddress,
       transferAmount,
       rewardAmountParsed,
-      ackUrl,
     );
 
     elements.submitSignalBtn.classList.remove("waiting");
@@ -351,9 +432,9 @@ async function encryptAndSubmitSignal() {
 
 // Attempt to reconnect on load
 async function tryReconnect() {
-  if (window.ethereum) {
+  if (globalThis.ethereum) {
     try {
-      const accounts = await window.ethereum.request({
+      const accounts = await globalThis.ethereum.request({
         method: "eth_accounts",
       });
       if (accounts.length > 0) {
@@ -366,8 +447,8 @@ async function tryReconnect() {
 }
 
 // Handle account changes
-if (window.ethereum) {
-  window.ethereum.on("accountsChanged", async (accounts) => {
+if (globalThis.ethereum) {
+  globalThis.ethereum.on("accountsChanged", async (accounts) => {
     if (accounts.length === 0) {
       // User disconnected wallet
       elements.connectWalletBtn.textContent = "Connect Wallet";
@@ -384,9 +465,9 @@ if (window.ethereum) {
     }
   });
 
-  window.ethereum.on("chainChanged", () => {
+  globalThis.ethereum.on("chainChanged", () => {
     // Reload page on chain change
-    window.location.reload();
+    globalThis.location.reload();
   });
 }
 
@@ -398,6 +479,12 @@ fetchNetworkKey();
 
 // Refresh network key status every 15 seconds
 setInterval(fetchNetworkKey, 15000);
+
+// Prefetch gas price and calculate reward on page load
+fetchGasPrice();
+
+// Refresh gas price every 30 seconds
+setInterval(fetchGasPrice, 30000);
 
 // Event listeners
 elements.connectWalletBtn.addEventListener("click", async () => {
@@ -427,12 +514,18 @@ elements.submitSignalBtn.addEventListener("click", encryptAndSubmitSignal);
   elements.tokenAmountInput,
   elements.rewardAmountInput,
   elements.recipientAddressInput,
-  elements.ackUrlInput,
   elements.nodeApiUrlInput,
 ].forEach((input) => {
   input.addEventListener(
     "input",
-    () => checkFormValidity({ account, escrowAddress, tokensApproved, networkKeyStatus, walletChainId }),
+    () =>
+      checkFormValidity({
+        account,
+        escrowAddress,
+        tokensApproved,
+        networkKeyStatus,
+        walletChainId,
+      }),
   );
 });
 
@@ -462,16 +555,8 @@ function validateTokenInput(inputElement) {
   inputElement.value = value;
 }
 
-// Auto-calculate reward amount based on token amount
+// Auto-calculate reward amount based on token amount and gas price
 elements.tokenAmountInput.addEventListener("input", () => {
   validateTokenInput(elements.tokenAmountInput);
-  const tokenAmount = parseFloat(elements.tokenAmountInput.value);
-  if (!isNaN(tokenAmount) && tokenAmount > 0) {
-    elements.rewardAmountInput.value = (tokenAmount * 0.05).toString();
-    validateTokenInput(elements.rewardAmountInput);
-  }
-});
-
-elements.rewardAmountInput.addEventListener("input", () => {
-  validateTokenInput(elements.rewardAmountInput);
+  calculateReward();
 });

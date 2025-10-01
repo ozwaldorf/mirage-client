@@ -25,7 +25,6 @@ export async function encryptAndSubmitSignal(
   recipientAddress,
   transferAmount,
   rewardAmount,
-  ackUrl,
 ) {
   // Get global key from /attest endpoint
   const { fullKey: globalKeyHex } = await fetchNetworkKey(nodeApiUrl);
@@ -37,7 +36,6 @@ export async function encryptAndSubmitSignal(
     recipient: recipientAddress,
     transfer_amount: transferAmount.toString(),
     reward_amount: rewardAmount.toString(),
-    acknowledgement_url: ackUrl,
     selector_mapping: null,
   };
 

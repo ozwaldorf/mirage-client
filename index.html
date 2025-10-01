@@ -76,8 +76,8 @@
         max-width: 400px;
       }
       .section {
-        margin: 20px 0;
-        padding: 20px;
+        margin: 30px 0;
+        padding: 10px 20px;
         border: 1px solid #444;
         border-radius: 4px;
         background: #333;
@@ -109,10 +109,6 @@
         font-size: 14px;
         margin: 5px;
       }
-      .actions-container button {
-        flex: 1;
-        margin: 10px 20px;
-      }
       #connectWallet {
         min-width: 150px;
       }
@@ -141,32 +137,12 @@
       .actions-container {
         display: flex;
         width: 100%;
+        gap: 30px;
       }
-      .expandable-section {
-        cursor: pointer;
-        user-select: none;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .section:has(.expandable-content:not(.collapsed)) .expandable-section {
-        margin-bottom: 10px;
-      }
-      .expandable-section h2 {
+      .actions-container button {
+        flex: 1;
         margin: 0;
-      }
-      .expand-icon {
-        transition: transform 0.2s;
-      }
-      .expand-icon.collapsed {
-        transform: rotate(-90deg);
-      }
-      .expandable-content {
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-      }
-      .expandable-content.collapsed {
-        max-height: 0 !important;
+        padding: 15px;
       }
       hr {
         border: none;
@@ -214,21 +190,12 @@
           <input type="text" id="tokenAmount" placeholder="100">
         </div>
         <div class="input-group">
-          <label for="rewardAmount">Reward Amount:</label>
-          <input type="text" id="rewardAmount" placeholder="10">
+          <label for="rewardAmount" id="rewardAmountLabel">Reward = 5% fee + (N gwei * gas / 4500 usd per eth)</label>
+          <input type="text" id="rewardAmount" disabled=true placeholder="11.091678">
         </div>
         <div class="input-group">
           <label for="recipientAddress">Recipient Address:</label>
           <input type="text" id="recipientAddress" placeholder="0x...">
-        </div>
-        <div class="input-group">
-          <label for="ackUrl">Acknowledgement URL:</label>
-          <input
-            type="text"
-            id="ackUrl"
-            placeholder="http://your-server.com/ack"
-            value="http://localhost:3001/ack"
-          >
         </div>
       </div>
 

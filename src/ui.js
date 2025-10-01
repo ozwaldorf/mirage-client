@@ -7,8 +7,8 @@ export const elements = {
   tokenContractInput: document.getElementById("tokenContract"),
   tokenAmountInput: document.getElementById("tokenAmount"),
   rewardAmountInput: document.getElementById("rewardAmount"),
+  rewardAmountLabel: document.getElementById("rewardAmountLabel"),
   recipientAddressInput: document.getElementById("recipientAddress"),
-  ackUrlInput: document.getElementById("ackUrl"),
   nodeApiUrlInput: document.getElementById("nodeApiUrl"),
 };
 
@@ -67,7 +67,6 @@ export function checkFormValidity(state) {
     elements.recipientAddressInput.value;
 
   const signalFieldsFilled = baseFieldsFilled &&
-    elements.ackUrlInput.value &&
     elements.nodeApiUrlInput.value;
 
   const networkOnline = state.networkKeyStatus &&
@@ -92,8 +91,10 @@ export function checkFormValidity(state) {
       elements.approveBtn.title = "";
     }
 
-    if (!elements.approveBtn.classList.contains("success") &&
-        !elements.approveBtn.classList.contains("waiting")) {
+    if (
+      !elements.approveBtn.classList.contains("success") &&
+      !elements.approveBtn.classList.contains("waiting")
+    ) {
       elements.approveBtn.textContent = "Approve Tokens";
     }
 
@@ -112,8 +113,10 @@ export function checkFormValidity(state) {
       elements.deployBondBtn.title = "";
     }
 
-    if (!elements.deployBondBtn.classList.contains("success") &&
-        !elements.deployBondBtn.classList.contains("waiting")) {
+    if (
+      !elements.deployBondBtn.classList.contains("success") &&
+      !elements.deployBondBtn.classList.contains("waiting")
+    ) {
       elements.deployBondBtn.textContent = "Deploy Escrow";
     }
 
@@ -136,8 +139,10 @@ export function checkFormValidity(state) {
       elements.submitSignalBtn.title = "";
     }
 
-    if (!elements.submitSignalBtn.classList.contains("success") &&
-        !elements.submitSignalBtn.classList.contains("waiting")) {
+    if (
+      !elements.submitSignalBtn.classList.contains("success") &&
+      !elements.submitSignalBtn.classList.contains("waiting")
+    ) {
       elements.submitSignalBtn.textContent = "Submit Signal";
     }
   }

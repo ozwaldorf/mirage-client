@@ -16,11 +16,11 @@ export async function loadArtifacts() {
 }
 
 export async function connectWallet() {
-  if (typeof window.ethereum === "undefined") {
+  if (typeof globalThis.ethereum === "undefined") {
     throw new Error("MetaMask not installed");
   }
 
-  const provider = new ethers.BrowserProvider(window.ethereum);
+  const provider = new ethers.BrowserProvider(globalThis.ethereum);
   await provider.send("eth_requestAccounts", []);
   const signer = await provider.getSigner();
   const account = await signer.getAddress();
@@ -28,11 +28,11 @@ export async function connectWallet() {
   const network = await provider.getNetwork();
   if (Number(network.chainId) !== SEPOLIA_CHAIN_ID) {
     try {
-      await window.ethereum.request({
+      await globalThis.ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x" + SEPOLIA_CHAIN_ID.toString(16) }],
       });
-    } catch (error) {
+    } catch (_error) {
       throw new Error("Please switch to Sepolia testnet");
     }
   }
