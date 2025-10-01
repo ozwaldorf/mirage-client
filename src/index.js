@@ -132,6 +132,10 @@ async function connectWallet() {
 
               if (isFunded) {
                 escrowAddress = checkAddress;
+                elements.approveBtn.classList.add("success");
+                elements.approveBtn.textContent = "Approved";
+                elements.deployBondBtn.classList.add("success");
+                elements.deployBondBtn.textContent = "Deployed";
                 showStatus(
                   `Contract already deployed and funded at ${checkAddress}`,
                   "success",
@@ -162,6 +166,8 @@ async function connectWallet() {
 
             if (allowance >= totalAmount) {
               tokensApproved = true;
+              elements.approveBtn.classList.add("success");
+              elements.approveBtn.textContent = "Approved";
               showStatus(`Already approved for ${nextNonceAddress}`, "success");
             }
           }
@@ -178,7 +184,11 @@ async function connectWallet() {
 }
 
 async function approveTokens() {
+  const originalText = elements.approveBtn.textContent;
   try {
+    elements.approveBtn.classList.remove("error", "success");
+    elements.approveBtn.classList.add("waiting");
+    elements.approveBtn.textContent = "Confirming...";
     showStatus("Approving tokens...", "info");
 
     const tokenAddress = elements.tokenContractInput.value;
@@ -217,18 +227,28 @@ async function approveTokens() {
 
     await tx.wait(1);
     tokensApproved = true;
+    elements.approveBtn.classList.remove("waiting");
+    elements.approveBtn.classList.add("success");
+    elements.approveBtn.textContent = "Approved";
     checkFormValidity({ account, escrowAddress, tokensApproved });
     showStatus(
       `Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`,
       "success",
     );
   } catch (error) {
+    elements.approveBtn.classList.remove("waiting");
+    elements.approveBtn.classList.add("error");
+    elements.approveBtn.textContent = originalText;
     showStatus(`Error: ${error.message}`, "error");
   }
 }
 
 async function deployAndBondEscrow() {
+  const originalText = elements.deployBondBtn.textContent;
   try {
+    elements.deployBondBtn.classList.remove("error", "success");
+    elements.deployBondBtn.classList.add("waiting");
+    elements.deployBondBtn.textContent = "Confirming...";
     showStatus("Fetching bytecode...", "info");
 
     const tokenAddress = elements.tokenContractInput.value;
@@ -259,16 +279,26 @@ async function deployAndBondEscrow() {
       signer,
     );
 
+    elements.deployBondBtn.classList.remove("waiting");
+    elements.deployBondBtn.classList.add("success");
+    elements.deployBondBtn.textContent = "Deployed";
     showStatus(`Escrow deployed at: ${escrowAddress}`, "success");
     checkFormValidity({ account, escrowAddress, tokensApproved });
   } catch (error) {
+    elements.deployBondBtn.classList.remove("waiting");
+    elements.deployBondBtn.classList.add("error");
+    elements.deployBondBtn.textContent = originalText;
     showStatus(`Error: ${error.message}`, "error");
     console.error(error);
   }
 }
 
 async function encryptAndSubmitSignal() {
+  const originalText = elements.submitSignalBtn.textContent;
   try {
+    elements.submitSignalBtn.classList.remove("error", "success");
+    elements.submitSignalBtn.classList.add("waiting");
+    elements.submitSignalBtn.textContent = "Confirming...";
     if (!escrowAddress) {
       throw new Error("Please deploy and bond escrow first");
     }
@@ -304,8 +334,14 @@ async function encryptAndSubmitSignal() {
       ackUrl,
     );
 
+    elements.submitSignalBtn.classList.remove("waiting");
+    elements.submitSignalBtn.classList.add("success");
+    elements.submitSignalBtn.textContent = "Submitted";
     showStatus(`Signal submitted successfully! ${result}`, "success");
   } catch (error) {
+    elements.submitSignalBtn.classList.remove("waiting");
+    elements.submitSignalBtn.classList.add("error");
+    elements.submitSignalBtn.textContent = originalText;
     showStatus(`Error: ${error.message}`, "error");
     console.error(error);
   }

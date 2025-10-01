@@ -12,9 +12,10 @@
         padding: 20px;
         background: #1a1a1a;
         color: #e0e0e0;
-        min-height: 100vh;
+        height: 100vh;
         display: flex;
         align-items: center;
+        box-sizing: border-box;
       }
       @media (max-width: 768px) {
         body {
@@ -110,7 +111,7 @@
       }
       .actions-container button {
         flex: 1;
-        margin: 0 20px;
+        margin: 10px 20px;
       }
       #connectWallet {
         min-width: 150px;
@@ -122,26 +123,18 @@
         background: #555;
         cursor: not-allowed;
       }
-      .status {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 4px;
-        display: none;
+      button.error {
+        background: #dc3545;
       }
-      .status.success {
-        background: #1e4620;
-        color: #7cfc00;
-        display: block;
+      button.error:hover {
+        background: #c82333;
       }
-      .status.error {
-        background: #4a1a1a;
-        color: #ff6b6b;
-        display: block;
+      button.success, button.success:hover {
+        background: #28a745;
+        text-decoration: line-through;
       }
-      .status.info {
-        background: #1a3a4a;
-        color: #5dade2;
-        display: block;
+      button.waiting, button.waiting:hover {
+        background: #555;
       }
       .connected {
         color: #28a745;
@@ -238,14 +231,13 @@
             value="http://localhost:3001/ack"
           >
         </div>
-
-        <div class="actions-container">
-          <button id="approveBtn" disabled>Approve Tokens</button>
-          <button id="deployBondBtn" disabled>Deploy Escrow</button>
-          <button id="submitSignalBtn" disabled>Submit Signal</button>
-        </div>
       </div>
 
+      <div class="actions-container">
+        <button id="approveBtn" disabled>Approve Tokens</button>
+        <button id="deployBondBtn" disabled>Deploy Escrow</button>
+        <button id="submitSignalBtn" disabled>Submit Signal</button>
+      </div>
     </div>
   </body>
 </html>
