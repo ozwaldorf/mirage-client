@@ -75,6 +75,7 @@ async function connectWallet() {
     elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${
       account.slice(-4)
     }`;
+    elements.connectWalletBtn.title = account;
     elements.connectWalletBtn.disabled = false;
 
     elements.recipientAddressInput.placeholder = account;

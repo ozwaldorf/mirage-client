@@ -78,7 +78,24 @@ export function checkFormValidity(state) {
     state.walletChainId === state.networkKeyStatus.chainId;
 
   if (state.account) {
-    elements.approveBtn.disabled = !baseFieldsFilled || state.escrowAddress;
+    const approveDisabled = !baseFieldsFilled || state.escrowAddress;
+    elements.approveBtn.disabled = approveDisabled;
+
+    // Update approve button tooltip based on reason for being disabled
+    if (approveDisabled && state.account && !state.escrowAddress) {
+      if (!baseFieldsFilled) {
+        elements.approveBtn.title = "Incomplete fields";
+      } else {
+        elements.approveBtn.title = "";
+      }
+    } else {
+      elements.approveBtn.title = "";
+    }
+
+    if (!elements.approveBtn.classList.contains("success") &&
+        !elements.approveBtn.classList.contains("waiting")) {
+      elements.approveBtn.textContent = "Approve Tokens";
+    }
 
     const deployDisabled = !baseFieldsFilled ||
       !state.tokensApproved || state.escrowAddress;
@@ -87,7 +104,7 @@ export function checkFormValidity(state) {
     // Update deploy button tooltip based on reason for being disabled
     if (deployDisabled && state.account && !state.escrowAddress) {
       if (!state.tokensApproved) {
-        elements.deployBondBtn.title = "Tokens Not Approved Yet";
+        elements.deployBondBtn.title = "Tokens not approved yet";
       } else {
         elements.deployBondBtn.title = "";
       }
@@ -107,11 +124,11 @@ export function checkFormValidity(state) {
     // Update submit signal button tooltip based on reason for being disabled
     if (submitDisabled && state.account) {
       if (!state.escrowAddress) {
-        elements.submitSignalBtn.title = "Contract Not Deployed";
+        elements.submitSignalBtn.title = "Contract not deployed";
       } else if (!networkOnline) {
-        elements.submitSignalBtn.title = "Network Offline";
+        elements.submitSignalBtn.title = "Network offline";
       } else if (!chainMatch) {
-        elements.submitSignalBtn.title = "Chain Mismatch";
+        elements.submitSignalBtn.title = "Chain mismatch";
       } else {
         elements.submitSignalBtn.title = "";
       }
