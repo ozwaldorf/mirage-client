@@ -1,6 +1,7 @@
 # Mirage Escrow Client
 
-Simple HTML client for interacting with Mirage escrow contracts on Sepolia testnet.
+Simple HTML client for interacting with Mirage escrow contracts on Sepolia
+testnet.
 
 ## Setup
 
@@ -36,7 +37,8 @@ npm run dev
 2. **Fill Signal Options** - Enter token contract, amounts, recipient, and URLs
 3. **Approve Tokens** - Approve ERC20 tokens for deposit
 4. **Deploy & Bond Escrow** - Deploy new escrow contract and bond to it
-5. **Encrypt & Submit Signal** - Encrypt signal with node's public key and submit to API
+5. **Encrypt & Submit Signal** - Encrypt signal with node's public key and
+   submit to API
 
 ## Requirements
 

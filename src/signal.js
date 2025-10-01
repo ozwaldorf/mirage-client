@@ -1,4 +1,4 @@
-import { encrypt } from 'eciesjs';
+import { encrypt } from "eciesjs";
 
 export async function fetchNetworkKey(nodeApiUrl) {
   const attestResponse = await fetch(`${nodeApiUrl}/attest`);
@@ -14,7 +14,7 @@ export async function fetchNetworkKey(nodeApiUrl) {
     attested: attestData.attested || false,
     debug: attestData.isDebug || attestData.debug || false,
     chainId: healthData.chainId,
-    fullKey
+    fullKey,
   };
 }
 
@@ -25,7 +25,7 @@ export async function encryptAndSubmitSignal(
   recipientAddress,
   transferAmount,
   rewardAmount,
-  ackUrl
+  ackUrl,
 ) {
   // Get global key from /attest endpoint
   const { fullKey: globalKeyHex } = await fetchNetworkKey(nodeApiUrl);
@@ -38,7 +38,7 @@ export async function encryptAndSubmitSignal(
     transfer_amount: transferAmount.toString(),
     reward_amount: rewardAmount.toString(),
     acknowledgement_url: ackUrl,
-    selector_mapping: null
+    selector_mapping: null,
   };
 
   // Encrypt signal data using ECIES (matches Rust ecies crate format)
@@ -46,19 +46,19 @@ export async function encryptAndSubmitSignal(
   const signalBytes = new TextEncoder().encode(signalJson);
 
   // Convert hex public key to Buffer
-  const publicKeyBuffer = Buffer.from(globalKeyHex.replace('0x', ''), 'hex');
+  const publicKeyBuffer = Buffer.from(globalKeyHex.replace("0x", ""), "hex");
 
   // Encrypt using eciesjs (compatible with Rust ecies crate)
   const encrypted = encrypt(publicKeyBuffer, signalBytes);
-  const encryptedSignal = '0x' + Buffer.from(encrypted).toString('hex');
+  const encryptedSignal = "0x" + Buffer.from(encrypted).toString("hex");
 
   // Submit to node
   const response = await fetch(`${nodeApiUrl}/signal`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(encryptedSignal)
+    body: JSON.stringify(encryptedSignal),
   });
 
   if (!response.ok) {

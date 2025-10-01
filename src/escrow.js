@@ -1,15 +1,26 @@
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
-export async function deployEscrow(artifacts, tokenAddress, recipientAddress, transferAmount, rewardAmount, signer) {
+export async function deployEscrow(
+  artifacts,
+  tokenAddress,
+  recipientAddress,
+  transferAmount,
+  rewardAmount,
+  signer,
+) {
   const { ESCROW_ABI, ESCROW_BYTECODE } = artifacts;
 
-  const factory = new ethers.ContractFactory(ESCROW_ABI, ESCROW_BYTECODE, signer);
+  const factory = new ethers.ContractFactory(
+    ESCROW_ABI,
+    ESCROW_BYTECODE,
+    signer,
+  );
   const escrowContract = await factory.deploy(
     tokenAddress,
     recipientAddress,
     transferAmount,
     rewardAmount,
-    transferAmount
+    transferAmount,
   );
 
   await escrowContract.waitForDeployment();

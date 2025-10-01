@@ -1,6 +1,6 @@
-import { ethers } from 'ethers';
-import escrowAbiFile from '../artifacts/Escrow.json';
-import bytecodeFile from '../artifacts/bytecode.hex';
+import { ethers } from "ethers";
+import escrowAbiFile from "../artifacts/Escrow.json";
+import bytecodeFile from "../artifacts/bytecode.hex";
 
 const SEPOLIA_CHAIN_ID = 11155111;
 
@@ -16,8 +16,8 @@ export async function loadArtifacts() {
 }
 
 export async function connectWallet() {
-  if (typeof window.ethereum === 'undefined') {
-    throw new Error('MetaMask not installed');
+  if (typeof window.ethereum === "undefined") {
+    throw new Error("MetaMask not installed");
   }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -29,11 +29,11 @@ export async function connectWallet() {
   if (Number(network.chainId) !== SEPOLIA_CHAIN_ID) {
     try {
       await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x' + SEPOLIA_CHAIN_ID.toString(16) }],
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x" + SEPOLIA_CHAIN_ID.toString(16) }],
       });
     } catch (error) {
-      throw new Error('Please switch to Sepolia testnet');
+      throw new Error("Please switch to Sepolia testnet");
     }
   }
 
@@ -43,8 +43,8 @@ export async function connectWallet() {
 export function predictNextContractAddress(deployerAddress, nonce) {
   const rlpEncoded = ethers.encodeRlp([
     deployerAddress,
-    ethers.toBeHex(nonce)
+    ethers.toBeHex(nonce),
   ]);
   const hash = ethers.keccak256(rlpEncoded);
-  return ethers.getAddress('0x' + hash.slice(26));
+  return ethers.getAddress("0x" + hash.slice(26));
 }
