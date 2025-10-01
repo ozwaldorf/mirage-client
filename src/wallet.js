@@ -4,7 +4,7 @@ import bytecodeFile from '../artifacts/bytecode.hex';
 
 const SEPOLIA_CHAIN_ID = 11155111;
 
-let ESCROW_ABI, ESCROW_BYTECODE;
+export let ESCROW_ABI, ESCROW_BYTECODE;
 
 export async function loadArtifacts() {
   const abiResponse = await fetch(escrowAbiFile);
@@ -13,10 +13,6 @@ export async function loadArtifacts() {
 
   const bytecodeResponse = await fetch(bytecodeFile);
   ESCROW_BYTECODE = (await bytecodeResponse.text()).trim();
-}
-
-export function getArtifacts() {
-  return { ESCROW_ABI, ESCROW_BYTECODE };
 }
 
 export async function connectWallet() {

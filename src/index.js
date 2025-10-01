@@ -1,12 +1,14 @@
 import { ethers } from 'ethers';
 import { elements, showStatus, updateNetworkKeyDisplay, checkFormValidity, getChainName } from './ui.js';
-import { loadArtifacts, getArtifacts, connectWallet as walletConnect, predictNextContractAddress } from './wallet.js';
-import { getTokenDecimals, parseTokenAmount, approveTokens as tokenApprove, getTokenBalance, getAllowance } from './token.js';
+import { loadArtifacts, ESCROW_ABI, ESCROW_BYTECODE, connectWallet as walletConnect, predictNextContractAddress } from './wallet.js';
+import { getTokenDecimals, parseTokenAmount, approveTokens as tokenApprove, getTokenBalance, getAllowance, resetTokenDecimals } from './token.js';
 import { deployEscrow, checkEscrowFunded } from './escrow.js';
 import { fetchNetworkKey as fetchKey, encryptAndSubmitSignal as submitSignal } from './signal.js';
 
 let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
 let networkKeyStatus = { prefix: null, attested: false, debug: false, chainId: null };
+let cachedDecimals = null;
+let cachedTokenAddress = null;
 
 async function fetchNetworkKey() {
   try {
@@ -50,17 +52,21 @@ async function connectWallet() {
     // Set token amount placeholder to wallet balance
     if (elements.tokenContractInput.value) {
       try {
-        const decimals = await getTokenDecimals(elements.tokenContractInput.value, signer);
-        const balance = await getTokenBalance(elements.tokenContractInput.value, account, signer);
-        const balanceFormatted = ethers.formatUnits(balance, decimals);
+        if (cachedTokenAddress !== elements.tokenContractInput.value) {
+          cachedTokenAddress = elements.tokenContractInput.value;
+          resetTokenDecimals();
+          cachedDecimals = await getTokenDecimals(cachedTokenAddress, signer);
+        }
+        const balance = await getTokenBalance(cachedTokenAddress, account, signer);
+        const balanceFormatted = ethers.formatUnits(balance, cachedDecimals);
         elements.tokenAmountInput.placeholder = balanceFormatted;
         elements.rewardAmountInput.placeholder = (parseFloat(balanceFormatted) * 0.05).toString();
 
         // Check if already approved and deployed
         if (elements.tokenAmountInput.value && elements.rewardAmountInput.value) {
           const nonce = await provider.getTransactionCount(account);
-          const tokenAmount = parseTokenAmount(elements.tokenAmountInput.value, decimals);
-          const rewardAmount = parseTokenAmount(elements.rewardAmountInput.value, decimals);
+          const tokenAmount = parseTokenAmount(elements.tokenAmountInput.value, cachedDecimals);
+          const rewardAmount = parseTokenAmount(elements.rewardAmountInput.value, cachedDecimals);
           const totalAmount = tokenAmount + rewardAmount;
 
           // Check last 2 nonces for deployed contract
@@ -74,7 +80,7 @@ async function connectWallet() {
 
             if (code !== '0x') {
               // Check if funded by calling funded() method
-              const isFunded = await checkEscrowFunded(checkAddress, getArtifacts(), signer);
+              const isFunded = await checkEscrowFunded(checkAddress, { ESCROW_ABI, ESCROW_BYTECODE }, signer);
 
               if (isFunded) {
                 escrowAddress = checkAddress;
@@ -121,8 +127,12 @@ async function approveTokens() {
       throw new Error('Please fill in all fields');
     }
 
-    const decimals = await getTokenDecimals(tokenAddress, signer);
-    const totalAmount = parseTokenAmount(tokenAmount, decimals) + parseTokenAmount(rewardAmount, decimals);
+    if (cachedTokenAddress !== tokenAddress) {
+      cachedTokenAddress = tokenAddress;
+      resetTokenDecimals();
+      cachedDecimals = await getTokenDecimals(tokenAddress, signer);
+    }
+    const totalAmount = parseTokenAmount(tokenAmount, cachedDecimals) + parseTokenAmount(rewardAmount, cachedDecimals);
 
     // Get current nonce and predict next contract address
     const nonce = await provider.getTransactionCount(account);
@@ -156,14 +166,18 @@ async function deployAndBondEscrow() {
       throw new Error('Please fill in all fields');
     }
 
-    const decimals = await getTokenDecimals(tokenAddress, signer);
-    const transferAmount = parseTokenAmount(tokenAmount, decimals);
-    const rewardAmountParsed = parseTokenAmount(rewardAmount, decimals);
+    if (cachedTokenAddress !== tokenAddress) {
+      cachedTokenAddress = tokenAddress;
+      resetTokenDecimals();
+      cachedDecimals = await getTokenDecimals(tokenAddress, signer);
+    }
+    const transferAmount = parseTokenAmount(tokenAmount, cachedDecimals);
+    const rewardAmountParsed = parseTokenAmount(rewardAmount, cachedDecimals);
 
     showStatus('Deploying escrow contract...', 'info');
 
     escrowAddress = await deployEscrow(
-      getArtifacts(),
+      { ESCROW_ABI, ESCROW_BYTECODE },
       tokenAddress,
       recipientAddress,
       transferAmount,
@@ -196,9 +210,13 @@ async function encryptAndSubmitSignal() {
 
     showStatus('Encrypting signal...', 'info');
 
-    const decimals = await getTokenDecimals(tokenAddress, signer);
-    const transferAmount = parseTokenAmount(tokenAmount, decimals);
-    const rewardAmountParsed = parseTokenAmount(rewardAmount, decimals);
+    if (cachedTokenAddress !== tokenAddress) {
+      cachedTokenAddress = tokenAddress;
+      resetTokenDecimals();
+      cachedDecimals = await getTokenDecimals(tokenAddress, signer);
+    }
+    const transferAmount = parseTokenAmount(tokenAmount, cachedDecimals);
+    const rewardAmountParsed = parseTokenAmount(rewardAmount, cachedDecimals);
 
     showStatus('Submitting signal to node...', 'info');
 

@@ -28,9 +28,7 @@ export async function encryptAndSubmitSignal(
   ackUrl
 ) {
   // Get global key from /attest endpoint
-  const attestResponse = await fetch(`${nodeApiUrl}/attest`);
-  const attestData = await attestResponse.json();
-  const globalKeyHex = attestData.globalKey;
+  const { fullKey: globalKeyHex } = await fetchNetworkKey(nodeApiUrl);
 
   // Build signal object
   const signal = {

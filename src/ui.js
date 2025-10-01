@@ -13,7 +13,7 @@ export const elements = {
   nodeApiUrlInput: document.getElementById('nodeApiUrl')
 };
 
-export function addLogEntry(message, type) {
+export function showStatus(message, type) {
   const timestamp = new Date().toLocaleTimeString();
   const entry = document.createElement('div');
   entry.style.marginBottom = '5px';
@@ -21,10 +21,6 @@ export function addLogEntry(message, type) {
   entry.textContent = `[${timestamp}] ${message}`;
   elements.consoleLog.appendChild(entry);
   elements.consoleLog.scrollTop = elements.consoleLog.scrollHeight;
-}
-
-export function showStatus(message, type) {
-  addLogEntry(message, type);
 }
 
 export function updateNetworkKeyDisplay(networkKeyStatus, walletChainId = null) {
@@ -41,8 +37,7 @@ export function updateNetworkKeyDisplay(networkKeyStatus, walletChainId = null) 
     const chainName = getChainName(chainId);
 
     const chainMismatch = walletChainId && chainId !== walletChainId;
-    const chainColor = chainMismatch ? '#ff6b6b' : '#999';
-    const tooltip = chainMismatch ? ' title="Chain does not match wallet"' : '';
+    const [chainColor, tooltip] = chainMismatch ? ['#ff6b6b', ' title="Chain does not match wallet"'] : ['#999', ''];
 
     elements.networkKeyDisplay.innerHTML = `Chain: <span style="color: ${chainColor}"${tooltip}>${chainName}</span> | Key: ${prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
     elements.networkKeyDisplay.style.color = '#999';

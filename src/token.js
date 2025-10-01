@@ -22,8 +22,7 @@ export function parseTokenAmount(amount, decimals) {
 
 export async function approveTokens(tokenAddress, spenderAddress, amount, signer) {
   const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-  const tx = await tokenContract.approve(spenderAddress, amount);
-  return tx;
+  return await tokenContract.approve(spenderAddress, amount);
 }
 
 export async function getTokenBalance(tokenAddress, owner, signer) {
