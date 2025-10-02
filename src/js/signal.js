@@ -3,8 +3,6 @@ import { encrypt } from "eciesjs";
 export async function fetchNetworkKey(nodeApiUrl) {
   const attestResponse = await fetch(`${nodeApiUrl}/attest`);
   const attestData = await attestResponse.json();
-  console.log(attestData);
-
   const fullKey = attestData.publicKey;
   return {
     prefix: `${fullKey.slice(0, 6)}...${fullKey.slice(-4)}`,
