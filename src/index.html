@@ -150,6 +150,60 @@
         background-color: #999;
         margin-bottom: 15px;
       }
+      .transfer-status {
+        margin-top: 30px;
+        padding: 15px;
+        border-radius: 4px;
+        background: #3d3d3d;
+        border: 1px solid #555;
+        display: none;
+      }
+      .transfer-status.visible {
+        display: block;
+      }
+      .transfer-status.watching {
+        border-color: #ffc107;
+        background: #3d3d1a;
+      }
+      .transfer-status.detected {
+        border-color: #28a745;
+        background: #1a3d23;
+      }
+      .transfer-status.error {
+        border-color: #dc3545;
+        background: #3d1a1a;
+      }
+      .transfer-status h3 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+      }
+      .transfer-status p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+      .transfer-status .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+      }
+      .transfer-status.watching .status-indicator {
+        background: #ffc107;
+      }
+      .transfer-status.detected .status-indicator {
+        background: #28a745;
+        animation: none;
+      }
+      .transfer-status.error .status-indicator {
+        background: #dc3545;
+        animation: none;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
     </style>
   </head>
   <body>
@@ -203,6 +257,11 @@
         <button id="approveBtn" disabled>Approve Tokens</button>
         <button id="deployBondBtn" disabled>Deploy Escrow</button>
         <button id="submitSignalBtn" disabled>Submit Signal</button>
+      </div>
+
+      <div id="transferStatus" class="transfer-status">
+        <h3><span class="status-indicator"></span><span id="transferStatusTitle">Watching for Transfer</span></h3>
+        <p id="transferStatusMessage"></p>
       </div>
     </div>
   </body>

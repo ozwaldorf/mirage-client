@@ -10,6 +10,9 @@ export const elements = {
   rewardAmountLabel: document.getElementById("rewardAmountLabel"),
   recipientAddressInput: document.getElementById("recipientAddress"),
   nodeApiUrlInput: document.getElementById("nodeApiUrl"),
+  transferStatus: document.getElementById("transferStatus"),
+  transferStatusTitle: document.getElementById("transferStatusTitle"),
+  transferStatusMessage: document.getElementById("transferStatusMessage"),
 };
 
 export function showStatus(message, type) {
@@ -22,26 +25,22 @@ export function updateNetworkKeyDisplay(
 ) {
   if (!elements.networkKeyDisplay) return;
 
-  const { prefix, attested, debug, chainId } = networkKeyStatus;
-
-  if (prefix === "Error") {
+  if (!networkKeyStatus) {
     elements.networkKeyDisplay.textContent = "Offline";
     elements.networkKeyDisplay.style.color = "#ff6b6b";
-  } else if (prefix) {
-    const attestedText = attested ? "yes" : "no";
-    const debugText = debug ? "yes" : "no";
-    const chainName = getChainName(chainId);
+  } else {
+    const attestedText = networkKeyStatus.attested ? "yes" : "no";
+    const debugText = networkKeyStatus.debug ? "yes" : "no";
+    const chainName = getChainName(networkKeyStatus.chainId);
 
-    const chainMismatch = walletChainId && chainId !== walletChainId;
+    const chainMismatch = walletChainId &&
+      networkKeyStatus.chainId !== walletChainId;
     const [chainColor, tooltip] = chainMismatch
       ? ["#ff6b6b", ' title="Chain does not match wallet"']
       : ["#999", ""];
 
     elements.networkKeyDisplay.innerHTML =
-      `Chain: <span style="color: ${chainColor}"${tooltip}>${chainName}</span> | Key: ${prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
-    elements.networkKeyDisplay.style.color = "#999";
-  } else {
-    elements.networkKeyDisplay.textContent = "Key: Loading...";
+      `Chain: <span style="color: ${chainColor}"${tooltip}>${chainName}</span> | Key: ${networkKeyStatus.prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
     elements.networkKeyDisplay.style.color = "#999";
   }
 }
@@ -57,6 +56,12 @@ export function getChainName(chainId) {
     8453: "Base",
   };
   return chainNames[chainId] || `unknown`;
+}
+
+export function showTransferStatus(status, title, message) {
+  elements.transferStatus.className = `transfer-status visible ${status}`;
+  elements.transferStatusTitle.textContent = title;
+  elements.transferStatusMessage.textContent = message;
 }
 
 export function checkFormValidity(state) {

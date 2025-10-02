@@ -3,6 +3,7 @@ import {
   checkFormValidity,
   elements,
   showStatus,
+  showTransferStatus,
   updateNetworkKeyDisplay,
 } from "./ui.js";
 import {
@@ -25,6 +26,7 @@ import {
   encryptAndSubmitSignal as submitSignal,
   fetchNetworkKey as fetchKey,
 } from "./protocol.js";
+import { transferMonitor } from "./monitor.js";
 
 let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
 let networkKeyStatus;
@@ -101,7 +103,6 @@ async function fetchNetworkKey() {
     });
   } catch (error) {
     console.error("Failed to fetch network key:", error);
-    networkKeyStatus.prefix = "Error";
     updateNetworkKeyDisplay(networkKeyStatus);
     checkFormValidity({
       account,
@@ -411,6 +412,37 @@ async function encryptAndSubmitSignal() {
     elements.submitSignalBtn.classList.add("success");
     elements.submitSignalBtn.textContent = "Submitted";
     showStatus(`Signal submitted successfully! ${result}`, "success");
+
+    // Start monitoring for the transfer
+    showTransferStatus(
+      "watching",
+      "Watching for Transfer",
+      `Monitoring ${tokenAddress} for ${tokenAmount} tokens to 0x${recipientAddress}`,
+    );
+
+    transferMonitor.watchTransfer(
+      tokenAddress,
+      recipientAddress,
+      transferAmount,
+      (transferData) => {
+        showTransferStatus(
+          "detected",
+          "Transfer Detected!",
+          `Transaction: ${transferData.transactionHash}`,
+        );
+        showStatus(
+          `Transfer detected in tx ${transferData.transactionHash}`,
+          "success",
+        );
+      },
+      (error) => {
+        showTransferStatus(
+          "error",
+          "Monitoring Error",
+          `Failed to monitor transfer: ${error.message}`,
+        );
+      },
+    );
   } catch (error) {
     elements.submitSignalBtn.classList.remove("waiting");
     elements.submitSignalBtn.classList.add("error");
