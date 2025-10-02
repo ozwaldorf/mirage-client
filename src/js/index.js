@@ -34,6 +34,7 @@ let cachedDecimals = null;
 let cachedTokenAddress = null;
 let cachedGasPriceWei = null;
 let cachedGasPriceGwei = null;
+let gasPriceIntervalId = null;
 
 async function fetchGasPrice() {
   try {
@@ -291,6 +292,13 @@ async function approveTokens() {
 
     await tx.wait(1);
     tokensApproved = true;
+
+    // Stop gas price updates after approval
+    if (gasPriceIntervalId !== null) {
+      clearInterval(gasPriceIntervalId);
+      gasPriceIntervalId = null;
+    }
+
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("success");
     elements.approveBtn.textContent = "Approved";
@@ -425,10 +433,14 @@ async function encryptAndSubmitSignal() {
       recipientAddress,
       transferAmount,
       (transferData) => {
+        const etherscanBaseUrl = walletChainId === 11155111
+          ? "https://sepolia.etherscan.io"
+          : "https://etherscan.io";
+        const etherscanUrl = `${etherscanBaseUrl}/tx/${transferData.transactionHash}`;
         showTransferStatus(
           "detected",
           "Transfer Successful!",
-          `Transaction: ${transferData.transactionHash}`,
+          `Transaction: <a href="${etherscanUrl}" target="_blank" rel="noopener noreferrer">${transferData.transactionHash}</a>`,
         );
         showStatus(
           `Transfer detected in tx ${transferData.transactionHash}`,
@@ -506,7 +518,7 @@ setInterval(fetchNetworkKey, 5000);
 fetchGasPrice();
 
 // Refresh gas price every 12 seconds
-setInterval(fetchGasPrice, 12000);
+gasPriceIntervalId = setInterval(fetchGasPrice, 12000);
 
 // Event listeners
 elements.connectWalletBtn.addEventListener("click", async () => {
