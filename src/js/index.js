@@ -281,6 +281,12 @@ async function approveTokens() {
 
     showStatus(`Predicted escrow address: ${predictedEscrowAddress}`, "info");
 
+    // Stop gas price updates before approval
+    if (gasPriceIntervalId !== null) {
+      clearInterval(gasPriceIntervalId);
+      gasPriceIntervalId = null;
+    }
+
     // Approve for predicted escrow contract address
     const tx = await tokenApprove(
       tokenAddress,
@@ -292,12 +298,6 @@ async function approveTokens() {
 
     await tx.wait(1);
     tokensApproved = true;
-
-    // Stop gas price updates after approval
-    if (gasPriceIntervalId !== null) {
-      clearInterval(gasPriceIntervalId);
-      gasPriceIntervalId = null;
-    }
 
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("success");
@@ -314,6 +314,9 @@ async function approveTokens() {
       "success",
     );
   } catch (error) {
+    if (gasPriceIntervalId == null) {
+      gasPriceIntervalId = setInterval(fetchGasPrice, 12000);
+    }
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("error");
     elements.approveBtn.textContent = originalText;
@@ -436,7 +439,8 @@ async function encryptAndSubmitSignal() {
         const etherscanBaseUrl = walletChainId === 11155111
           ? "https://sepolia.etherscan.io"
           : "https://etherscan.io";
-        const etherscanUrl = `${etherscanBaseUrl}/tx/${transferData.transactionHash}`;
+        const etherscanUrl =
+          `${etherscanBaseUrl}/tx/${transferData.transactionHash}`;
         showTransferStatus(
           "detected",
           "Transfer Successful!",

@@ -61,7 +61,7 @@ export function getChainName(chainId) {
 export function showTransferStatus(status, title, message) {
   elements.transferStatus.className = `transfer-status visible ${status}`;
   elements.transferStatusTitle.textContent = title;
-  elements.transferStatusMessage.textContent = message;
+  elements.transferStatusMessage.innerHTML = message;
 }
 
 export function checkFormValidity(state) {
