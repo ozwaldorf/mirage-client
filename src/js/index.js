@@ -24,7 +24,7 @@ import { checkEscrowFunded, deployEscrow } from "./escrow.js";
 import {
   encryptAndSubmitSignal as submitSignal,
   fetchNetworkKey as fetchKey,
-} from "./signal.js";
+} from "./protocol.js";
 
 let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
 let networkKeyStatus;

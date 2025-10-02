@@ -26,12 +26,12 @@ export async function encryptAndSubmitSignal(
 
   // Build signal object
   const signal = {
-    escrow_contract: escrowAddress,
-    token_contract: tokenAddress,
+    escrowContract: escrowAddress,
+    tokenContract: tokenAddress,
     recipient: recipientAddress,
-    transfer_amount: transferAmount.toString(),
-    reward_amount: rewardAmount.toString(),
-    selector_mapping: null,
+    transferAmount: transferAmount.toString(),
+    rewardAmount: rewardAmount.toString(),
+    selectorMapping: null,
   };
 
   // Encrypt signal data using ECIES (matches Rust ecies crate format)
@@ -41,9 +41,8 @@ export async function encryptAndSubmitSignal(
   // Convert hex public key to Buffer
   const publicKeyBuffer = Buffer.from(globalKeyHex.replace("0x", ""), "hex");
 
-  // Encrypt using eciesjs (compatible with Rust ecies crate)
+  // Encrypt using eciesjs
   const encrypted = encrypt(publicKeyBuffer, signalBytes);
-  const encryptedSignal = "0x" + Buffer.from(encrypted).toString("hex");
 
   // Submit to node
   const response = await fetch(`${nodeApiUrl}/signal`, {
@@ -51,7 +50,7 @@ export async function encryptAndSubmitSignal(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(encryptedSignal),
+    body: JSON.stringify("0x" + Buffer.from(encrypted).toString("hex")),
   });
 
   if (!response.ok) {
