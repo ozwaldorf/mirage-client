@@ -416,8 +416,8 @@ async function encryptAndSubmitSignal() {
     // Start monitoring for the transfer
     showTransferStatus(
       "watching",
-      "Watching for Transfer",
-      `Monitoring ${tokenAddress} for ${tokenAmount} tokens to 0x${recipientAddress}`,
+      "Transfer Pending",
+      `Monitoring ${tokenAddress} for ${tokenAmount} tokens to ${recipientAddress}`,
     );
 
     transferMonitor.watchTransfer(
@@ -427,7 +427,7 @@ async function encryptAndSubmitSignal() {
       (transferData) => {
         showTransferStatus(
           "detected",
-          "Transfer Detected!",
+          "Transfer Successful!",
           `Transaction: ${transferData.transactionHash}`,
         );
         showStatus(
