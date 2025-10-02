@@ -27,12 +27,7 @@ import {
 } from "./signal.js";
 
 let provider, signer, account, escrowAddress, tokensApproved, walletChainId;
-const networkKeyStatus = {
-  prefix: null,
-  attested: false,
-  debug: false,
-  chainId: null,
-};
+let networkKeyStatus;
 let cachedDecimals = null;
 let cachedTokenAddress = null;
 let cachedGasPriceWei = null;
@@ -95,12 +90,7 @@ async function fetchNetworkKey() {
     const nodeApiUrl = elements.nodeApiUrlInput.value;
     if (!nodeApiUrl) return;
 
-    const keyData = await fetchKey(nodeApiUrl);
-    networkKeyStatus.prefix = keyData.prefix;
-    networkKeyStatus.attested = keyData.attested;
-    networkKeyStatus.debug = keyData.debug;
-    networkKeyStatus.chainId = keyData.chainId;
-
+    networkKeyStatus = await fetchKey(nodeApiUrl);
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
     checkFormValidity({
       account,
@@ -477,14 +467,14 @@ tryReconnect();
 // Prefetch network key on page load
 fetchNetworkKey();
 
-// Refresh network key status every 15 seconds
-setInterval(fetchNetworkKey, 15000);
+// Refresh network key status every 5 seconds
+setInterval(fetchNetworkKey, 5000);
 
 // Prefetch gas price and calculate reward on page load
 fetchGasPrice();
 
-// Refresh gas price every 30 seconds
-setInterval(fetchGasPrice, 30000);
+// Refresh gas price every 12 seconds
+setInterval(fetchGasPrice, 12000);
 
 // Event listeners
 elements.connectWalletBtn.addEventListener("click", async () => {

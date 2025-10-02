@@ -50,14 +50,13 @@ export function getChainName(chainId) {
   const chainNames = {
     1: "Mainnet",
     11155111: "Sepolia",
-    5: "Goerli",
     17000: "Holesky",
     137: "Polygon",
     10: "Optimism",
     42161: "Arbitrum",
     8453: "Base",
   };
-  return chainNames[chainId] || `Chain ${chainId}`;
+  return chainNames[chainId] || `unknown`;
 }
 
 export function checkFormValidity(state) {
