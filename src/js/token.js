@@ -5,6 +5,8 @@ const ERC20_ABI = [
   "function decimals() view returns (uint8)",
   "function balanceOf(address owner) view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
+  "function symbol() view returns (string)",
+  "function name() view returns (string)",
 ];
 
 let tokenDecimals;
@@ -42,4 +44,14 @@ export async function getAllowance(tokenAddress, owner, spender, signer) {
 
 export function resetTokenDecimals() {
   tokenDecimals = undefined;
+}
+
+export async function getTokenSymbol(tokenAddress, signer) {
+  const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+  return await tokenContract.symbol();
+}
+
+export async function getTokenName(tokenAddress, signer) {
+  const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+  return await tokenContract.name();
 }

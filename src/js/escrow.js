@@ -23,8 +23,11 @@ export async function deployEscrow(
     transferAmount,
   );
 
-  await escrowContract.waitForDeployment();
-  return escrowContract.target;
+  // Return contract and hash immediately, caller can wait for deployment
+  return {
+    contract: escrowContract,
+    deploymentHash: escrowContract.deploymentTransaction()?.hash,
+  };
 }
 
 export async function checkEscrowFunded(escrowAddress, artifacts, signer) {

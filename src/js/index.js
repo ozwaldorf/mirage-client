@@ -18,6 +18,8 @@ import {
   getAllowance,
   getTokenBalance,
   getTokenDecimals,
+  getTokenName,
+  getTokenSymbol,
   parseTokenAmount,
   resetTokenDecimals,
 } from "./token.js";
@@ -34,20 +36,46 @@ let cachedDecimals = null;
 let cachedTokenAddress = null;
 let cachedGasPriceWei = null;
 let cachedGasPriceGwei = null;
-let gasPriceIntervalId = null;
+let etherscanBaseUrl = "https://etherscan.io";
+let approveClicked = false;
+let deployClicked = false;
+let submitClicked = false;
+
+function setupGasPriceListener() {
+  if (!provider) return;
+
+  // Listen for new blocks and update gas price
+  provider.on("block", async () => {
+    // Stop updating if approve has been clicked
+    if (approveClicked) return;
+
+    try {
+      const gasPriceHex = await provider.send("eth_gasPrice", []);
+      cachedGasPriceWei = BigInt(gasPriceHex);
+      cachedGasPriceGwei = Number(cachedGasPriceWei) / 1e9;
+      calculateReward();
+    } catch (error) {
+      console.error("Failed to fetch gas price:", error);
+    }
+  });
+}
 
 async function fetchGasPrice() {
   try {
-    // Fetch gas price from Etherscan
-    const response = await fetch(
-      "https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle",
-    );
-    const data = await response.json();
-    cachedGasPriceGwei = parseFloat(data.result.ProposeGasPrice);
+    if (!provider) {
+      // Default to 1.6 gwei if no provider
+      cachedGasPriceGwei = 1.6;
+      cachedGasPriceWei = BigInt(Math.round(cachedGasPriceGwei * 1e9));
+      calculateReward();
+      return;
+    }
 
-    // Convert to wei (1 gwei = 1e9 wei) using float math, then round and convert to BigInt
-    const gasPriceWeiFloat = cachedGasPriceGwei * 1e9;
-    cachedGasPriceWei = BigInt(Math.round(gasPriceWeiFloat));
+    // Fetch gas price using eth_gasPrice RPC call (returns hex string)
+    const gasPriceHex = await provider.send("eth_gasPrice", []);
+    cachedGasPriceWei = BigInt(gasPriceHex);
+
+    // Convert to gwei for display
+    cachedGasPriceGwei = Number(cachedGasPriceWei) / 1e9;
 
     // Recalculate reward with new gas price
     calculateReward();
@@ -74,17 +102,82 @@ function calculateReward() {
     // Convert to USD
     const rewardUsd = (gasCostEth * ethToUsdRate) + (tokenAmount * 0.05);
 
-    // Display gas price in label (rounded to 3 decimals)
-    elements.rewardAmountLabel.textContent = `Reward = 5% fee + (${
-      cachedGasPriceGwei.toFixed(3)
-    } gwei * gas / 4500 usd per eth)`;
+    // Update reward label with full formula, using mwei if gwei is < 0.01
+    let gasPriceDisplay;
+    if (cachedGasPriceGwei < 0.01) {
+      const gasPriceMwei = cachedGasPriceGwei * 1000;
+      gasPriceDisplay = `${gasPriceMwei.toFixed(2)} mwei`;
+    } else {
+      gasPriceDisplay = `${cachedGasPriceGwei.toFixed(1)} gwei`;
+    }
+
+    elements.rewardAmountLabel.textContent =
+      `5% + (${gasPriceDisplay} × gas / ${ethToUsdRate} USD/ETH)`;
 
     elements.rewardAmountInput.value = rewardUsd.toFixed(
       Number(cachedDecimals),
     );
     elements.rewardAmountInput.disabled = true;
+
+    // Calculate and display total
+    const amount = parseFloat(elements.tokenAmountInput.value) || 0;
+    const total = amount + rewardUsd;
+
+    // Update total label with calculation
+    elements.totalAmountLabel.textContent = `Total = ${amount.toFixed(2)} + ${
+      rewardUsd.toFixed(2)
+    }`;
+
+    elements.totalAmountInput.value = total.toFixed(Number(cachedDecimals));
+    elements.totalAmountInput.disabled = true;
+
+    // Update approve title with total
+    updateApproveTitle();
   } catch (error) {
     console.error("Failed to calculate reward:", error);
+  }
+}
+
+function updateApproveTitle(symbol = null) {
+  const tokenSymbol = symbol || elements.tokenSymbolInput.value;
+  const tokenAmount = elements.tokenAmountInput.value;
+  const rewardAmount = elements.rewardAmountInput.value;
+
+  if (!tokenSymbol) {
+    elements.approveTitle.textContent = "Approve Tokens";
+  } else if (!tokenAmount || !rewardAmount) {
+    elements.approveTitle.textContent = `Approve ${tokenSymbol}`;
+  } else {
+    const total = parseFloat(tokenAmount) + parseFloat(rewardAmount);
+    elements.approveTitle.textContent = `Approve ${
+      total.toFixed(2)
+    } ${tokenSymbol}`;
+  }
+}
+
+async function fetchTokenInfo() {
+  try {
+    const tokenAddress = elements.tokenContractInput.value;
+    if (!tokenAddress || !signer) {
+      elements.tokenSymbolInput.value = "";
+      elements.tokenNameInput.value = "";
+      elements.approveTitle.textContent = "Approve Tokens";
+      return;
+    }
+
+    const symbol = await getTokenSymbol(tokenAddress, signer);
+    const name = await getTokenName(tokenAddress, signer);
+
+    elements.tokenSymbolInput.value = symbol;
+    elements.tokenNameInput.value = name;
+
+    // Update approve title with token symbol
+    updateApproveTitle(symbol);
+  } catch (error) {
+    console.error("Failed to fetch token info:", error);
+    elements.tokenSymbolInput.value = "";
+    elements.tokenNameInput.value = "";
+    elements.approveTitle.textContent = "Approve Tokens";
   }
 }
 
@@ -101,6 +194,7 @@ async function fetchNetworkKey() {
       tokensApproved,
       networkKeyStatus,
       walletChainId,
+      approveClicked,
     });
   } catch (error) {
     console.error("Failed to fetch network key:", error);
@@ -111,6 +205,7 @@ async function fetchNetworkKey() {
       tokensApproved,
       networkKeyStatus,
       walletChainId,
+      approveClicked,
     });
   }
 }
@@ -127,6 +222,12 @@ async function connectWallet() {
     // Get wallet chain ID
     const network = await provider.getNetwork();
     walletChainId = Number(network.chainId);
+
+    // Update etherscan URL based on chain
+    etherscanBaseUrl = walletChainId === 11155111
+      ? "https://sepolia.etherscan.io"
+      : "https://etherscan.io";
+
     updateNetworkKeyDisplay(networkKeyStatus, walletChainId);
 
     elements.connectWalletBtn.textContent = `${account.slice(0, 6)}...${
@@ -136,6 +237,13 @@ async function connectWallet() {
     elements.connectWalletBtn.disabled = false;
 
     elements.recipientAddressInput.placeholder = account;
+
+    // Fetch initial gas price and setup WebSocket listener for updates
+    await fetchGasPrice();
+    setupGasPriceListener();
+
+    // Fetch token info
+    await fetchTokenInfo();
 
     // Set token amount placeholder to wallet balance
     if (elements.tokenContractInput.value) {
@@ -155,23 +263,16 @@ async function connectWallet() {
         elements.rewardAmountInput.placeholder =
           (parseFloat(balanceFormatted) * 0.05).toString();
 
-        // Check if already approved and deployed
-        if (
-          elements.tokenAmountInput.value && elements.rewardAmountInput.value
-        ) {
+        // Only check if already approved and deployed if form has values
+        const hasFormValues = elements.tokenAmountInput.value &&
+          elements.recipientAddressInput.value;
+
+        let foundContract = false;
+        if (hasFormValues) {
+          // Check if already approved and deployed
           const nonce = await provider.getTransactionCount(account);
-          const tokenAmount = parseTokenAmount(
-            elements.tokenAmountInput.value,
-            cachedDecimals,
-          );
-          const rewardAmount = parseTokenAmount(
-            elements.rewardAmountInput.value,
-            cachedDecimals,
-          );
-          const totalAmount = BigInt(tokenAmount) + BigInt(rewardAmount);
 
           // Check last 2 nonces for deployed contract
-          let foundContract = false;
           for (let i = 0; i < 2; i++) {
             const checkNonce = nonce - i;
             if (checkNonce < 0) break;
@@ -195,22 +296,37 @@ async function connectWallet() {
                 elements.approveBtn.textContent = "Approved";
                 elements.deployBondBtn.classList.add("success");
                 elements.deployBondBtn.textContent = "Deployed";
+                elements.deployHash.innerHTML =
+                  `<a href="${etherscanBaseUrl}/address/${escrowAddress}" target="_blank" rel="noopener noreferrer">${
+                    escrowAddress.substring(0, 10)
+                  }</a>`;
                 showStatus(
-                  `Contract already deployed and funded at ${checkAddress}`,
+                  `Found existing escrow at ${escrowAddress}`,
                   "success",
                 );
                 foundContract = true;
                 break;
-              } else {
-                showStatus(
-                  `Contract at ${checkAddress} exists but not funded`,
-                  "info",
-                );
               }
             }
           }
+        }
 
-          if (!foundContract) {
+        // If we have token amount and reward, check approvals
+        if (
+          !foundContract && elements.tokenAmountInput.value &&
+          elements.rewardAmountInput.value
+        ) {
+          const tokenAmount = parseTokenAmount(
+            elements.tokenAmountInput.value,
+            cachedDecimals,
+          );
+          const rewardAmount = parseTokenAmount(
+            elements.rewardAmountInput.value,
+            cachedDecimals,
+          );
+          const totalAmount = BigInt(tokenAmount) + BigInt(rewardAmount);
+
+          {
             // Check if approved for next deployment (nonce + 1)
             const nextNonceAddress = predictNextContractAddress(
               account,
@@ -242,6 +358,7 @@ async function connectWallet() {
       tokensApproved,
       networkKeyStatus,
       walletChainId,
+      approveClicked,
     });
   } catch (error) {
     showStatus(`Error: ${error.message}`, "error");
@@ -249,20 +366,18 @@ async function connectWallet() {
 }
 
 async function approveTokens() {
+  approveClicked = true;
   const originalText = elements.approveBtn.textContent;
   try {
-    elements.approveBtn.classList.remove("error", "success");
+    elements.approveBtn.classList.remove("error", "success", "verified");
     elements.approveBtn.classList.add("waiting");
     elements.approveBtn.textContent = "Confirming...";
+    elements.approveStatus.className = "action-status pending";
     showStatus("Approving tokens...", "info");
 
     const tokenAddress = elements.tokenContractInput.value;
     const tokenAmount = elements.tokenAmountInput.value;
     const rewardAmount = elements.rewardAmountInput.value;
-
-    if (!tokenAddress || !tokenAmount || !rewardAmount) {
-      throw new Error("Please fill in all fields");
-    }
 
     if (cachedTokenAddress !== tokenAddress) {
       cachedTokenAddress = tokenAddress;
@@ -281,12 +396,6 @@ async function approveTokens() {
 
     showStatus(`Predicted escrow address: ${predictedEscrowAddress}`, "info");
 
-    // Stop gas price updates before approval
-    if (gasPriceIntervalId !== null) {
-      clearInterval(gasPriceIntervalId);
-      gasPriceIntervalId = null;
-    }
-
     // Approve for predicted escrow contract address
     const tx = await tokenApprove(
       tokenAddress,
@@ -296,40 +405,49 @@ async function approveTokens() {
     );
     showStatus(`Waiting for approval transaction: ${tx.hash}`, "info");
 
+    // Display transaction hash immediately
+    elements.approveHash.innerHTML =
+      `<a href="${etherscanBaseUrl}/tx/${tx.hash}" target="_blank" rel="noopener noreferrer">${
+        tx.hash.substring(0, 10)
+      }</a>`;
+
     await tx.wait(1);
     tokensApproved = true;
 
     elements.approveBtn.classList.remove("waiting");
-    elements.approveBtn.classList.add("success");
-    elements.approveBtn.textContent = "Approved";
+    elements.approveBtn.classList.add("verified");
+    elements.approveBtn.textContent = "Verified";
+    elements.approveStatus.className = "action-status success";
+
     checkFormValidity({
       account,
       escrowAddress,
       tokensApproved,
       networkKeyStatus,
       walletChainId,
+      approveClicked,
     });
     showStatus(
       `Tokens approved for ${predictedEscrowAddress}! Tx: ${tx.hash}`,
       "success",
     );
   } catch (error) {
-    if (gasPriceIntervalId == null) {
-      gasPriceIntervalId = setInterval(fetchGasPrice, 12000);
-    }
     elements.approveBtn.classList.remove("waiting");
     elements.approveBtn.classList.add("error");
     elements.approveBtn.textContent = originalText;
+    elements.approveStatus.className = "action-status error";
     showStatus(`Error: ${error.message}`, "error");
   }
 }
 
 async function deployAndBondEscrow() {
+  deployClicked = true;
   const originalText = elements.deployBondBtn.textContent;
   try {
-    elements.deployBondBtn.classList.remove("error", "success");
+    elements.deployBondBtn.classList.remove("error", "success", "verified");
     elements.deployBondBtn.classList.add("waiting");
     elements.deployBondBtn.textContent = "Confirming...";
+    elements.deployStatus.className = "action-status pending";
     showStatus("Fetching bytecode...", "info");
 
     const tokenAddress = elements.tokenContractInput.value;
@@ -351,7 +469,7 @@ async function deployAndBondEscrow() {
 
     showStatus("Deploying escrow contract...", "info");
 
-    escrowAddress = await deployEscrow(
+    const deployResult = await deployEscrow(
       { ESCROW_ABI, ESCROW_BYTECODE },
       tokenAddress,
       recipientAddress,
@@ -360,9 +478,27 @@ async function deployAndBondEscrow() {
       signer,
     );
 
+    // Display transaction hash immediately
+    if (deployResult.deploymentHash) {
+      elements.deployHash.innerHTML =
+        `<a href="${etherscanBaseUrl}/tx/${deployResult.deploymentHash}" target="_blank" rel="noopener noreferrer">${
+          deployResult.deploymentHash.substring(0, 10)
+        }</a>`;
+      showStatus(
+        `Waiting for deployment: ${deployResult.deploymentHash}`,
+        "info",
+      );
+    }
+
+    // Wait for deployment to complete
+    await deployResult.contract.waitForDeployment();
+    escrowAddress = deployResult.contract.target;
+
     elements.deployBondBtn.classList.remove("waiting");
-    elements.deployBondBtn.classList.add("success");
-    elements.deployBondBtn.textContent = "Deployed";
+    elements.deployBondBtn.classList.add("verified");
+    elements.deployBondBtn.textContent = "Verified";
+    elements.deployStatus.className = "action-status success";
+
     showStatus(`Escrow deployed at: ${escrowAddress}`, "success");
     checkFormValidity({
       account,
@@ -370,22 +506,26 @@ async function deployAndBondEscrow() {
       tokensApproved,
       networkKeyStatus,
       walletChainId,
+      approveClicked,
     });
   } catch (error) {
     elements.deployBondBtn.classList.remove("waiting");
     elements.deployBondBtn.classList.add("error");
     elements.deployBondBtn.textContent = originalText;
+    elements.deployStatus.className = "action-status error";
     showStatus(`Error: ${error.message}`, "error");
     console.error(error);
   }
 }
 
 async function encryptAndSubmitSignal() {
+  submitClicked = true;
   const originalText = elements.submitSignalBtn.textContent;
   try {
-    elements.submitSignalBtn.classList.remove("error", "success");
+    elements.submitSignalBtn.classList.remove("error", "success", "verified");
     elements.submitSignalBtn.classList.add("waiting");
     elements.submitSignalBtn.textContent = "Confirming...";
+    elements.submitStatus.className = "action-status pending";
     if (!escrowAddress) {
       throw new Error("Please deploy and bond escrow first");
     }
@@ -419,50 +559,61 @@ async function encryptAndSubmitSignal() {
       rewardAmountParsed,
     );
 
-    elements.submitSignalBtn.classList.remove("waiting");
-    elements.submitSignalBtn.classList.add("success");
-    elements.submitSignalBtn.textContent = "Submitted";
     showStatus(`Signal submitted successfully! ${result}`, "success");
+    showStatus("Monitoring for transfer...", "info");
 
-    // Start monitoring for the transfer
-    showTransferStatus(
-      "watching",
-      "Transfer Pending",
-      `Monitoring ${tokenAddress} for ${tokenAmount} tokens to ${recipientAddress}`,
-    );
+    // Set 2 minute timeout
+    const timeoutId = setTimeout(() => {
+      elements.submitSignalBtn.classList.remove("waiting");
+      elements.submitSignalBtn.classList.add("error");
+      elements.submitSignalBtn.textContent = originalText;
+      elements.submitStatus.className = "action-status error";
+      showStatus("Transfer monitoring timeout after 2 minutes", "error");
+      transferMonitor.stopWatching();
+    }, 120000); // 2 minutes
 
+    // Start monitoring for the transfer (button stays in waiting state)
     transferMonitor.watchTransfer(
       tokenAddress,
       recipientAddress,
       transferAmount,
       (transferData) => {
-        const etherscanBaseUrl = walletChainId === 11155111
-          ? "https://sepolia.etherscan.io"
-          : "https://etherscan.io";
+        // Transfer detected - clear timeout and mark as verified
+        clearTimeout(timeoutId);
+        elements.submitSignalBtn.classList.remove("waiting");
+        elements.submitSignalBtn.classList.add("verified");
+        elements.submitSignalBtn.textContent = "Verified";
+        elements.submitStatus.className = "action-status success";
+
+        // Display transaction hash
         const etherscanUrl =
           `${etherscanBaseUrl}/tx/${transferData.transactionHash}`;
-        showTransferStatus(
-          "detected",
-          "Transfer Successful!",
-          `Transaction: <a href="${etherscanUrl}" target="_blank" rel="noopener noreferrer">${transferData.transactionHash}</a>`,
-        );
+        elements.submitHash.innerHTML =
+          `<a href="${etherscanUrl}" target="_blank" rel="noopener noreferrer">${
+            transferData.transactionHash.substring(0, 10)
+          }</a>`;
+
         showStatus(
           `Transfer detected in tx ${transferData.transactionHash}`,
           "success",
         );
       },
       (error) => {
-        showTransferStatus(
-          "error",
-          "Monitoring Error",
-          `Failed to monitor transfer: ${error.message}`,
-        );
+        // Error during monitoring - clear timeout
+        clearTimeout(timeoutId);
+        elements.submitSignalBtn.classList.remove("waiting");
+        elements.submitSignalBtn.classList.add("error");
+        elements.submitSignalBtn.textContent = originalText;
+        elements.submitStatus.className = "action-status error";
+
+        showStatus(`Monitoring error: ${error.message}`, "error");
       },
     );
   } catch (error) {
     elements.submitSignalBtn.classList.remove("waiting");
     elements.submitSignalBtn.classList.add("error");
     elements.submitSignalBtn.textContent = originalText;
+    elements.submitStatus.className = "action-status error";
     showStatus(`Error: ${error.message}`, "error");
     console.error(error);
   }
@@ -521,9 +672,6 @@ setInterval(fetchNetworkKey, 5000);
 // Prefetch gas price and calculate reward on page load
 fetchGasPrice();
 
-// Refresh gas price every 12 seconds
-gasPriceIntervalId = setInterval(fetchGasPrice, 12000);
-
 // Event listeners
 elements.connectWalletBtn.addEventListener("click", async () => {
   if (account) {
@@ -563,6 +711,7 @@ elements.submitSignalBtn.addEventListener("click", encryptAndSubmitSignal);
         tokensApproved,
         networkKeyStatus,
         walletChainId,
+        approveClicked,
       }),
   );
 });
@@ -592,6 +741,9 @@ function validateTokenInput(inputElement) {
 
   inputElement.value = value;
 }
+
+// Fetch token info when contract address changes
+elements.tokenContractInput.addEventListener("input", fetchTokenInfo);
 
 // Auto-calculate reward amount based on token amount and gas price
 elements.tokenAmountInput.addEventListener("input", () => {

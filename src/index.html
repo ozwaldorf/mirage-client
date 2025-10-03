@@ -6,59 +6,55 @@
     <title>Mirage Privacy Client</title>
     <style>
       body {
-        font-family: system-ui, -apple-system, sans-serif;
-        max-width: 800px;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+          Helvetica, Arial, sans-serif;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 20px;
-        background: #1a1a1a;
+        padding: 24px;
+        background: #0b0b0b;
         color: #e0e0e0;
-        height: 100vh;
-        display: flex;
-        align-items: center;
+        min-height: 100vh;
         box-sizing: border-box;
       }
       @media (max-width: 768px) {
         body {
           margin: 0;
-          padding: 0;
-          align-items: flex-start;
+          padding: 16px;
         }
       }
       .container {
-        background: #2d2d2d;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        background: #0b0b0b;
         width: 100%;
       }
-      @media (max-width: 768px) {
-        .container {
-          padding: 15px;
-          border-radius: 0;
-        }
-      }
       .header {
-        margin-bottom: 20px;
+        margin: 0 0 24px 0;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #262626;
       }
       .header-top {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 16px;
+        margin-right: -5px;
       }
       .header h1 {
         margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: #e0e0e0;
       }
       .header-bottom {
         display: flex;
-        gap: 15px;
+        gap: 12px;
         align-items: center;
-        margin-top: 20px;
+        margin-top: 16px;
       }
       .node-api-group {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         flex: 1;
         max-width: 400px;
       }
@@ -66,124 +62,306 @@
         margin: 0;
         white-space: nowrap;
         font-size: 14px;
+        color: #7d8590;
       }
       .network-key-status {
         font-size: 12px;
-        color: #999;
-        font-family: monospace;
+        color: #8d8d8d;
+        font-family:
+          ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
       }
       .node-api-input {
         flex: 1;
         max-width: 400px;
       }
+      .main-content {
+        display: flex;
+        gap: 24px;
+        margin: 0;
+      }
+      @media (max-width: 1024px) {
+        .main-content {
+          flex-direction: column;
+        }
+      }
       .section {
-        margin: 30px 0;
-        padding: 10px 20px;
-        border: 1px solid #444;
-        border-radius: 4px;
-        background: #333;
+        flex: 1;
+        padding: 16px;
+        border: 1px solid #262626;
+        border-radius: 6px;
+        background: #161616;
+      }
+      .sidebar {
+        width: 512px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      @media (max-width: 1024px) {
+        .sidebar {
+          width: 100%;
+        }
       }
       .input-group {
-        margin: 15px 0;
+        margin: 16px 0;
       }
       label {
         display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
+        margin-bottom: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #e0e0e0;
       }
       input {
         width: 100%;
-        padding: 8px;
-        border: 1px solid #555;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border: 1px solid #393939;
+        border-radius: 6px;
         box-sizing: border-box;
-        background: #3d3d3d;
+        background: #0b0b0b;
         color: #e0e0e0;
+        font-size: 14px;
+        line-height: 20px;
+      }
+      input:focus {
+        outline: none;
+        border-color: #4589ff;
+        box-shadow: 0 0 0 3px rgba(69, 137, 255, 0.3);
+      }
+      input:disabled {
+        background: #161616;
+        color: #8d8d8d;
+        cursor: default;
       }
       button {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
+        background: #42be65;
+        color: #000000;
+        border: 1px solid rgba(240, 246, 252, 0.1);
+        padding: 5px 16px;
+        border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
+        font-weight: 500;
         margin: 5px;
+        line-height: 20px;
       }
       #connectWallet {
         min-width: 150px;
+        background: #4589ff;
+        color: #000000;
+        border-color: rgba(69, 137, 255, 0.4);
+      }
+      #connectWallet:hover {
+        background: #78a9ff;
       }
       button:hover {
-        background: #0056b3;
+        background: #3ddbd9;
       }
       button:disabled {
-        background: #555;
-        cursor: default;
+        background: #0b0b0b;
+        color: #6f6f6f;
+        cursor: not-allowed;
+        border-color: #393939;
       }
       button.error {
-        background: #dc3545;
-      }
-      button.error:hover {
-        background: #c82333;
-      }
-      button.success, button.success:hover {
-        background: #28a745;
-      }
-      button.waiting, button.waiting:hover {
-        background: #555;
+        background: #fa4d56;
+        color: #000000;
+        border-color: rgba(240, 246, 252, 0.1);
       }
       .connected {
-        color: #28a745;
+        color: #42be65;
       }
       .actions-container {
         display: flex;
-        width: 100%;
-        gap: 30px;
+        flex-direction: column;
+        gap: 0;
+        padding: 0;
+        border: 1px solid #262626;
+        border-radius: 6px;
+        background: #161616;
       }
-      .actions-container button {
+      .action-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        gap: 8px;
+        position: relative;
+        min-height: 48px;
+      }
+      .action-item:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        left: 25px;
+        bottom: -18px;
+        top: 46px;
+        width: 2px;
+        background: #262626;
+      }
+      .action-status {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #393939;
+        background: #0b0b0b;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        z-index: 1;
+      }
+      .action-status.disabled {
+        width: 10px;
+        height: 10px;
+        margin: 3px;
+      }
+      .action-status.available {
+        border-color: #4589ff;
+        background: #0b0b0b;
+      }
+      .action-status.pending {
+        border-color: #fddc69;
+        background: #0b0b0b;
+        animation: pulse 1s infinite;
+      }
+      .action-status.success {
+        border-color: #42be65;
+        background: #0b0b0b;
+        color: #42be65;
+      }
+      .action-status.success::after {
+        content: "✓";
+        font-weight: bold;
+      }
+      .action-status.error {
+        border-color: #fa4d56;
+        background: #0b0b0b;
+        color: #fa4d56;
+      }
+      .action-status.error::after {
+        content: "✕";
+        font-weight: bold;
+      }
+      .action-content {
         flex: 1;
-        margin: 0;
-        padding: 15px;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .action-title {
+        position: relative;
+        bottom: 1px;
+        margin-left: 8px;
+        font-size: 14px;
+        font-weight: 400;
+        color: #e0e0e0;
+      }
+      .action-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .action-button button {
+        position: relative;
+        bottom: 1px;
+        padding: 2px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        min-width: 80px;
+        border-radius: 12px;
+        background: #0b0b0b;
+        color: #4589ff;
+        border: 1px solid #4589ff;
+      }
+      .action-button button:hover {
+        background: rgba(69, 137, 255, 0.1);
+      }
+      .action-button button:disabled {
+        background: #0b0b0b;
+        border-color: #393939;
+        color: #6f6f6f;
+      }
+      .action-button button.waiting {
+        background: #0b0b0b;
+        border-color: #fddc69;
+        color: #fddc69;
+      }
+      .action-button button.verified {
+        background: #0b0b0b;
+        border-color: #42be65;
+        color: #42be65;
+      }
+      .action-button button.error {
+        background: #0b0b0b;
+        border-color: #fa4d56;
+        color: #fa4d56;
+      }
+      .action-hash {
+        font-size: 12px;
+        color: #e0e0e0;
+        font-family:
+          ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+        min-height: 20px;
+        display: flex;
+        align-items: center;
+      }
+      .action-hash a, .action-hash a:visited {
+        color: #e0e0e0;
+      }
+      .action-hash a:hover {
+        color: #82cfff;
+      }
+      .action-hash:empty {
+        display: none;
       }
       hr {
         border: none;
         height: 1px;
-        background-color: #999;
-        margin-bottom: 15px;
+        background-color: #21262d;
+        margin-bottom: 16px;
       }
       .transfer-status {
-        margin-top: 30px;
-        padding: 15px;
-        border-radius: 4px;
-        background: #3d3d3d;
-        border: 1px solid #555;
+        padding: 16px;
+        border-radius: 6px;
+        background: #161b22;
+        border: 1px solid #30363d;
         display: none;
       }
       .transfer-status.visible {
         display: block;
       }
       .transfer-status.watching {
-        border-color: #ffc107;
-        background: #3d3d1a;
+        border-color: #9e6a03;
+        background: rgba(187, 128, 9, 0.15);
       }
       .transfer-status.detected {
-        border-color: #28a745;
-        background: #1a3d23;
+        border-color: #238636;
+        background: rgba(46, 160, 67, 0.15);
       }
       .transfer-status.error {
-        border-color: #dc3545;
-        background: #3d1a1a;
+        border-color: #da3633;
+        background: rgba(218, 54, 51, 0.15);
       }
       .transfer-status h3 {
-        margin: 0 0 10px 0;
-        font-size: 16px;
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
       }
       .transfer-status p {
-        margin: 5px 0;
+        margin: 4px 0;
         font-size: 14px;
+        color: #e6edf3;
       }
       a, a:visited {
-        color: #4da6ff;
+        color: #2f81f7;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
       }
       .transfer-status .status-indicator {
         display: inline-block;
@@ -194,19 +372,50 @@
         animation: pulse 2s infinite;
       }
       .transfer-status.watching .status-indicator {
-        background: #ffc107;
+        background: #d29922;
       }
       .transfer-status.detected .status-indicator {
-        background: #28a745;
+        background: #3fb950;
         animation: none;
       }
       .transfer-status.error .status-indicator {
-        background: #dc3545;
+        background: #f85149;
         animation: none;
       }
       @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .token-inputs {
+        display: flex;
+        gap: 8px;
+      }
+      .token-contract-input {
+        flex: 1;
+      }
+      .token-symbol-input {
+        width: 70px;
+      }
+      .token-name-input {
+        width: 150px;
+      }
+      .amount-inputs {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .amount-input-wrapper {
+        flex: 1;
+      }
+      .amount-label-small {
+        font-size: 11px;
+        margin-bottom: 4px;
+        color: #8d8d8d;
+        font-weight: 400;
       }
     </style>
   </head>
@@ -233,39 +442,116 @@
         </div>
       </div>
 
-      <div class="section">
-        <div class="input-group">
-          <label for="tokenContract">Token Contract Address:</label>
-          <input
-            type="text"
-            id="tokenContract"
-            placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
-            value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
-          >
+      <div class="main-content">
+        <div class="section">
+          <div class="input-group">
+            <label for="tokenContract">Token Contract Address:</label>
+            <div class="token-inputs">
+              <input
+                type="text"
+                id="tokenContract"
+                class="token-contract-input"
+                placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
+                value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
+              >
+              <input
+                type="text"
+                id="tokenSymbol"
+                class="token-symbol-input"
+                disabled
+                placeholder="Symbol"
+              >
+              <input
+                type="text"
+                id="tokenName"
+                class="token-name-input"
+                disabled
+                placeholder="Name"
+              >
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="recipientAddress">Recipient Address:</label>
+            <input type="text" id="recipientAddress" placeholder="0x...">
+          </div>
+          <div class="input-group">
+            <div class="amount-inputs">
+              <div class="amount-input-wrapper">
+                <label for="tokenAmount">Token Amount:</label>
+                <input type="text" id="tokenAmount" placeholder="100">
+              </div>
+              <div class="amount-input-wrapper">
+                <label
+                  for="rewardAmount"
+                  id="rewardAmountLabel"
+                  class="amount-label-small"
+                >5% + (1.6 gwei × gas / 4500 USD/ETH)</label>
+                <input
+                  type="text"
+                  id="rewardAmount"
+                  disabled
+                  placeholder="Reward"
+                >
+              </div>
+              <div class="amount-input-wrapper">
+                <label
+                  for="totalAmount"
+                  id="totalAmountLabel"
+                  class="amount-label-small"
+                >Total = Amount + Reward</label>
+                <input
+                  type="text"
+                  id="totalAmount"
+                  disabled
+                  placeholder="Total"
+                >
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="input-group">
-          <label for="recipientAddress">Recipient Address:</label>
-          <input type="text" id="recipientAddress" placeholder="0x...">
-        </div>
-        <div class="input-group">
-          <label for="tokenAmount">Token Amount:</label>
-          <input type="text" id="tokenAmount" placeholder="100">
-        </div>
-        <div class="input-group">
-          <label for="rewardAmount" id="rewardAmountLabel">Reward = 5% fee + (N gwei * gas / 4500 usd per eth)</label>
-          <input type="text" id="rewardAmount" disabled=true placeholder="11.091678">
-        </div>
-      </div>
 
-      <div class="actions-container">
-        <button id="approveBtn" disabled>Approve Tokens</button>
-        <button id="deployBondBtn" disabled>Deploy Escrow</button>
-        <button id="submitSignalBtn" disabled>Submit Signal</button>
-      </div>
+        <div class="sidebar">
+          <div class="actions-container">
+            <div class="action-item">
+              <div class="action-status disabled" id="approveStatus"></div>
+              <div class="action-content">
+                <div class="action-title" id="approveTitle">Approve Tokens</div>
+                <div class="action-meta">
+                  <div class="action-button">
+                    <button id="approveBtn" disabled>Approve</button>
+                  </div>
+                  <div class="action-hash" id="approveHash"></div>
+                </div>
+              </div>
+            </div>
 
-      <div id="transferStatus" class="transfer-status">
-        <h3><span class="status-indicator"></span><span id="transferStatusTitle">Watching for Transfer</span></h3>
-        <p id="transferStatusMessage"></p>
+            <div class="action-item">
+              <div class="action-status disabled" id="deployStatus"></div>
+              <div class="action-content">
+                <div class="action-title">Deploy Escrow</div>
+                <div class="action-meta">
+                  <div class="action-button">
+                    <button id="deployBondBtn" disabled>Deploy</button>
+                  </div>
+                  <div class="action-hash" id="deployHash"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-item">
+              <div class="action-status disabled" id="submitStatus"></div>
+              <div class="action-content">
+                <div class="action-title">Submit Signal</div>
+                <div class="action-meta">
+                  <div class="action-button">
+                    <button id="submitSignalBtn" disabled>Submit</button>
+                  </div>
+                  <div class="action-hash" id="submitHash"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </body>
