@@ -30,8 +30,14 @@ export async function deployEscrow(
   };
 }
 
-export async function checkEscrowFunded(escrowAddress, artifacts, signer) {
-  const { ESCROW_ABI } = artifacts;
-  const escrowContract = new ethers.Contract(escrowAddress, ESCROW_ABI, signer);
-  return await escrowContract.funded();
+export async function checkEscrowFunded(escrowAddress, escrow_abi, signer) {
+  try {
+    const escrowContract = new ethers.Contract(escrowAddress, escrow_abi, signer);
+    const funded = await escrowContract.funded();
+    console.log(`Escrow ${escrowAddress} funded status:`, funded);
+    return funded;
+  } catch (error) {
+    console.error(`Error checking funded status for ${escrowAddress}:`, error);
+    return false;
+  }
 }

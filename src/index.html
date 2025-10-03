@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mirage Privacy Client</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
       body {
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
           Helvetica, Arial, sans-serif;
-        max-width: 1200px;
+        max-width: 1150px;
         margin: 0 auto;
         padding: 24px;
         background: #0b0b0b;
         color: #e0e0e0;
         min-height: 100vh;
         box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       @media (max-width: 768px) {
         body {
@@ -26,11 +30,14 @@
       .container {
         background: #0b0b0b;
         width: 100%;
+        max-width: 1150px;
       }
       .header {
         margin: 0 0 24px 0;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #262626;
+        padding: 16px;
+        border: 1px solid #262626;
+        border-radius: 6px;
+        background: #161616;
       }
       .header-top {
         display: flex;
@@ -44,36 +51,69 @@
         font-size: 24px;
         font-weight: 600;
         color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .header h1 img {
+        height: 32px;
+        width: 32px;
+        border-radius: 6px;
       }
       .header-bottom {
         display: flex;
         gap: 12px;
-        align-items: center;
+        align-items: flex-end;
         margin-top: 16px;
       }
       .node-api-group {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        flex: 2;
+      }
+      .form-label {
+        font-size: 10px;
+        color: #e0e0e0;
+        margin-bottom: 2px;
+        font-weight: 400;
+        display: block;
+      }
+      .node-api-input {
+        width: 100%;
+      }
+      .network-info-inputs {
+        display: flex;
         gap: 8px;
         flex: 1;
-        max-width: 400px;
       }
-      .node-api-group label {
-        margin: 0;
-        white-space: nowrap;
-        font-size: 14px;
-        color: #7d8590;
+      .network-info-group {
+        display: flex;
+        flex-direction: column;
       }
-      .network-key-status {
+      .network-info-input {
         font-size: 12px;
-        color: #8d8d8d;
+        padding: 4px 10px;
         font-family:
           ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
           "Liberation Mono", monospace;
       }
-      .node-api-input {
-        flex: 1;
-        max-width: 400px;
+      .network-chain-width {
+        width: 100px;
+      }
+      .network-key-width {
+        width: 115px;
+      }
+      .network-attested-width {
+        width: 50px;
+      }
+      .network-debug-width {
+        width: 50px;
+      }
+      .network-offline {
+        color: #ff6b6b !important;
+      }
+      .network-warning {
+        color: #fa4d56 !important;
       }
       .main-content {
         display: flex;
@@ -92,8 +132,19 @@
         border-radius: 6px;
         background: #161616;
       }
+      .section h2 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #e0e0e0;
+      }
+      .section hr {
+        border: none;
+        border-top: 1px solid #262626;
+        margin: 16px 0;
+      }
       .sidebar {
-        width: 512px;
+        width: 450px;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -104,14 +155,13 @@
         }
       }
       .input-group {
-        margin: 16px 0;
+        margin: 12px 0;
       }
-      label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        color: #e0e0e0;
+      .input-group:first-child {
+        margin-top: 0;
+      }
+      .input-group:last-child {
+        margin-bottom: 0;
       }
       input {
         width: 100%;
@@ -131,7 +181,7 @@
       }
       input:disabled {
         background: #161616;
-        color: #8d8d8d;
+        color: #e0e0e0;
         cursor: default;
       }
       button {
@@ -148,12 +198,18 @@
       }
       #connectWallet {
         min-width: 150px;
-        background: #4589ff;
-        color: #000000;
-        border-color: rgba(69, 137, 255, 0.4);
+        background: #0b0b0b;
+        color: #4589ff;
+        border: 1px solid #4589ff;
+      }
+      #connectWallet::before {
+        font-family: "Font Awesome 6 Free";
+        content: "\f555";
+        font-weight: 900;
+        margin-right: 8px;
       }
       #connectWallet:hover {
-        background: #78a9ff;
+        background: rgba(69, 137, 255, 0.1);
       }
       button:hover {
         background: #3ddbd9;
@@ -198,6 +254,9 @@
         width: 2px;
         background: #262626;
       }
+      .action-item:has(.action-status.success):not(:last-child)::before {
+        background: #393939;
+      }
       .action-status {
         width: 16px;
         height: 16px;
@@ -219,11 +278,37 @@
       .action-status.available {
         border-color: #4589ff;
         background: #0b0b0b;
+        color: #4589ff;
+      }
+      .action-status.available::after {
+        font-family: "Font Awesome 6 Free";
+        content: "\f105";
+        font-weight: 900;
+        font-size: 12px;
+        position: relative;
+        top: 1px;
       }
       .action-status.pending {
         border-color: #fddc69;
         background: #0b0b0b;
-        animation: pulse 1s infinite;
+        color: #fddc69;
+      }
+      .action-status.pending::after {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fddc69;
+        animation: pendingPulse 1s infinite;
+      }
+      @keyframes pendingPulse {
+        0%, 100% {
+          background: #fddc69;
+        }
+        50% {
+          background: #0b0b0b;
+        }
       }
       .action-status.success {
         border-color: #42be65;
@@ -231,8 +316,10 @@
         color: #42be65;
       }
       .action-status.success::after {
-        content: "✓";
-        font-weight: bold;
+        font-family: "Font Awesome 6 Free";
+        content: "\f00c";
+        font-weight: 900;
+        font-size: 10px;
       }
       .action-status.error {
         border-color: #fa4d56;
@@ -240,8 +327,28 @@
         color: #fa4d56;
       }
       .action-status.error::after {
-        content: "✕";
-        font-weight: bold;
+        font-family: "Font Awesome 6 Free";
+        content: "\f00d";
+        font-weight: 900;
+        font-size: 10px;
+      }
+      .action-status.available.reload {
+        color: #e0e0e0;
+        border-color: #e0e0e0;
+      }
+      .action-status.available.reload::after {
+        font-family: "Font Awesome 6 Free";
+        content: "\f2f1";
+        font-weight: 900;
+        font-size: 10px;
+        top: 0;
+      }
+      .action-button button.reload-btn {
+        color: #e0e0e0;
+        border-color: #e0e0e0;
+      }
+      .action-button button.reload-btn:hover {
+        background: rgba(224, 224, 224, 0.1);
       }
       .action-content {
         flex: 1;
@@ -257,6 +364,9 @@
         font-size: 14px;
         font-weight: 400;
         color: #e0e0e0;
+      }
+      .action-item:has(.action-status.disabled) .action-title {
+        color: #6f6f6f;
       }
       .action-meta {
         display: flex;
@@ -318,44 +428,6 @@
       .action-hash:empty {
         display: none;
       }
-      hr {
-        border: none;
-        height: 1px;
-        background-color: #21262d;
-        margin-bottom: 16px;
-      }
-      .transfer-status {
-        padding: 16px;
-        border-radius: 6px;
-        background: #161b22;
-        border: 1px solid #30363d;
-        display: none;
-      }
-      .transfer-status.visible {
-        display: block;
-      }
-      .transfer-status.watching {
-        border-color: #9e6a03;
-        background: rgba(187, 128, 9, 0.15);
-      }
-      .transfer-status.detected {
-        border-color: #238636;
-        background: rgba(46, 160, 67, 0.15);
-      }
-      .transfer-status.error {
-        border-color: #da3633;
-        background: rgba(218, 54, 51, 0.15);
-      }
-      .transfer-status h3 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .transfer-status p {
-        margin: 4px 0;
-        font-size: 14px;
-        color: #e6edf3;
-      }
       a, a:visited {
         color: #2f81f7;
         text-decoration: none;
@@ -363,45 +435,20 @@
       a:hover {
         text-decoration: underline;
       }
-      .transfer-status .status-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: pulse 2s infinite;
-      }
-      .transfer-status.watching .status-indicator {
-        background: #d29922;
-      }
-      .transfer-status.detected .status-indicator {
-        background: #3fb950;
-        animation: none;
-      }
-      .transfer-status.error .status-indicator {
-        background: #f85149;
-        animation: none;
-      }
-      @keyframes pulse {
-        0%, 100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-      }
       .token-inputs {
         display: flex;
         gap: 8px;
+        align-items: flex-end;
+      }
+      .token-input-wrapper {
+        display: flex;
+        flex-direction: column;
       }
       .token-contract-input {
         flex: 1;
       }
       .token-symbol-input {
         width: 70px;
-      }
-      .token-name-input {
-        width: 150px;
       }
       .amount-inputs {
         display: flex;
@@ -411,11 +458,13 @@
       .amount-input-wrapper {
         flex: 1;
       }
-      .amount-label-small {
-        font-size: 11px;
-        margin-bottom: 4px;
-        color: #8d8d8d;
-        font-weight: 400;
+      .reward-input-width {
+        width: 184px;
+        flex: none;
+      }
+      .total-input-width {
+        width: 120px;
+        flex: none;
       }
     </style>
   </head>
@@ -423,11 +472,12 @@
     <div class="container">
       <div class="header">
         <div class="header-top">
-          <h1>Mirage SGX Client</h1>
+          <h1><img src="logo.png" alt="Mirage">Mirage SGX Client</h1>
           <button id="connectWallet">Connect Wallet</button>
         </div>
         <div class="header-bottom">
           <div class="node-api-group">
+            <label for="nodeApiUrl" class="form-label">Network URL</label>
             <input
               type="text"
               id="nodeApiUrl"
@@ -436,55 +486,70 @@
               value="http://localhost:8000"
             >
           </div>
-          <div id="networkKeyDisplay" class="network-key-status">
-            Key: Loading...
+          <div class="network-info-inputs">
+            <div class="network-info-group">
+              <label for="networkChain" class="form-label">Chain</label>
+              <input type="text" id="networkChain" class="network-info-input network-chain-width" disabled placeholder="...">
+            </div>
+            <div class="network-info-group">
+              <label for="networkKey" class="form-label">Key</label>
+              <input type="text" id="networkKey" class="network-info-input network-key-width" disabled placeholder="...">
+            </div>
+            <div class="network-info-group">
+              <label for="networkAttested" class="form-label">Attested</label>
+              <input type="text" id="networkAttested" class="network-info-input network-attested-width" disabled placeholder="...">
+            </div>
+            <div class="network-info-group">
+              <label for="networkDebug" class="form-label">Debug</label>
+              <input type="text" id="networkDebug" class="network-info-input network-debug-width" disabled placeholder="...">
+            </div>
           </div>
         </div>
       </div>
 
       <div class="main-content">
         <div class="section">
+          <h2>Token Transfer</h2>
+          <hr>
           <div class="input-group">
-            <label for="tokenContract">Token Contract Address:</label>
             <div class="token-inputs">
-              <input
-                type="text"
-                id="tokenContract"
-                class="token-contract-input"
-                placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
-                value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
-              >
-              <input
-                type="text"
-                id="tokenSymbol"
-                class="token-symbol-input"
-                disabled
-                placeholder="Symbol"
-              >
-              <input
-                type="text"
-                id="tokenName"
-                class="token-name-input"
-                disabled
-                placeholder="Name"
-              >
+              <div class="token-input-wrapper" style="flex: 1;">
+                <label for="tokenContract" class="form-label">Token Contract Address</label>
+                <input
+                  type="text"
+                  id="tokenContract"
+                  class="token-contract-input"
+                  placeholder="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
+                  value="0xd402cE7dfd5F84d33d123A9D6078DF4096239c86"
+                >
+              </div>
+              <div class="token-input-wrapper">
+                <label for="tokenSymbol" class="form-label">Symbol</label>
+                <input
+                  type="text"
+                  id="tokenSymbol"
+                  class="token-symbol-input"
+                  disabled
+                  placeholder="..."
+                >
+              </div>
             </div>
           </div>
           <div class="input-group">
-            <label for="recipientAddress">Recipient Address:</label>
+            <label for="recipientAddress" class="form-label">Recipient Address</label>
             <input type="text" id="recipientAddress" placeholder="0x...">
           </div>
           <div class="input-group">
             <div class="amount-inputs">
               <div class="amount-input-wrapper">
-                <label for="tokenAmount">Token Amount:</label>
+                <label for="tokenAmount" class="form-label">Token Amount</label>
                 <input type="text" id="tokenAmount" placeholder="100">
               </div>
-              <div class="amount-input-wrapper">
+              <div class="amount-input-wrapper reward-input-width">
                 <label
                   for="rewardAmount"
                   id="rewardAmountLabel"
-                  class="amount-label-small"
+                  class="form-label"
                 >5% + (1.6 gwei × gas / 4500 USD/ETH)</label>
                 <input
                   type="text"
@@ -493,11 +558,11 @@
                   placeholder="Reward"
                 >
               </div>
-              <div class="amount-input-wrapper">
+              <div class="amount-input-wrapper total-input-width">
                 <label
                   for="totalAmount"
                   id="totalAmountLabel"
-                  class="amount-label-small"
+                  class="form-label"
                 >Total = Amount + Reward</label>
                 <input
                   type="text"
@@ -541,12 +606,24 @@
             <div class="action-item">
               <div class="action-status disabled" id="submitStatus"></div>
               <div class="action-content">
-                <div class="action-title">Submit Signal</div>
+                <div class="action-title">Execute Signal on Mirage</div>
                 <div class="action-meta">
                   <div class="action-button">
-                    <button id="submitSignalBtn" disabled>Submit</button>
+                    <button id="submitSignalBtn" disabled>Execute</button>
                   </div>
                   <div class="action-hash" id="submitHash"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-item">
+              <div class="action-status disabled" id="startOverStatus"></div>
+              <div class="action-content">
+                <div class="action-title">New Transaction</div>
+                <div class="action-meta">
+                  <div class="action-button">
+                    <button id="startOver" class="reload-btn" disabled>Reset</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -14,10 +14,12 @@ export const elements = {
   monitorStatus: document.getElementById("monitorStatus"),
   monitorBtn: document.getElementById("monitorBtn"),
   monitorHash: document.getElementById("monitorHash"),
-  networkKeyDisplay: document.getElementById("networkKeyDisplay"),
+  networkChainInput: document.getElementById("networkChain"),
+  networkKeyInput: document.getElementById("networkKey"),
+  networkAttestedInput: document.getElementById("networkAttested"),
+  networkDebugInput: document.getElementById("networkDebug"),
   tokenContractInput: document.getElementById("tokenContract"),
   tokenSymbolInput: document.getElementById("tokenSymbol"),
-  tokenNameInput: document.getElementById("tokenName"),
   tokenAmountInput: document.getElementById("tokenAmount"),
   rewardAmountInput: document.getElementById("rewardAmount"),
   rewardAmountLabel: document.getElementById("rewardAmountLabel"),
@@ -28,6 +30,8 @@ export const elements = {
   transferStatus: document.getElementById("transferStatus"),
   transferStatusTitle: document.getElementById("transferStatusTitle"),
   transferStatusMessage: document.getElementById("transferStatusMessage"),
+  startOverBtn: document.getElementById("startOver"),
+  startOverStatus: document.getElementById("startOverStatus"),
 };
 
 export function showStatus(message, type) {
@@ -38,25 +42,40 @@ export function updateNetworkKeyDisplay(
   networkKeyStatus,
   walletChainId = null,
 ) {
-  if (!elements.networkKeyDisplay) return;
-
   if (!networkKeyStatus) {
-    elements.networkKeyDisplay.textContent = "Offline";
-    elements.networkKeyDisplay.style.color = "#ff6b6b";
+    elements.networkChainInput.value = "Offline";
+    elements.networkChainInput.classList.add("network-offline");
+    elements.networkKeyInput.value = "";
+    elements.networkAttestedInput.value = "";
+    elements.networkDebugInput.value = "";
   } else {
+    elements.networkChainInput.classList.remove("network-offline");
     const attestedText = networkKeyStatus.attested ? "yes" : "no";
     const debugText = networkKeyStatus.debug ? "yes" : "no";
     const chainName = getChainName(networkKeyStatus.chainId);
 
     const chainMismatch = walletChainId &&
       networkKeyStatus.chainId !== walletChainId;
-    const [chainColor, tooltip] = chainMismatch
-      ? ["#ff6b6b", ' title="Chain does not match wallet"']
-      : ["#999", ""];
 
-    elements.networkKeyDisplay.innerHTML =
-      `Chain: <span style="color: ${chainColor}"${tooltip}>${chainName}</span> | Key: ${networkKeyStatus.prefix} | Attested: ${attestedText} | Debug: ${debugText}`;
-    elements.networkKeyDisplay.style.color = "#999";
+    elements.networkChainInput.value = chainName;
+    elements.networkChainInput.title = chainMismatch ? "Chain does not match wallet" : "";
+    elements.networkKeyInput.value = networkKeyStatus.prefix;
+    elements.networkAttestedInput.value = attestedText;
+    elements.networkDebugInput.value = debugText;
+
+    // Mark attested field as warning if not attested
+    if (!networkKeyStatus.attested) {
+      elements.networkAttestedInput.classList.add("network-warning");
+    } else {
+      elements.networkAttestedInput.classList.remove("network-warning");
+    }
+
+    // Mark debug field as warning if debug mode is enabled
+    if (networkKeyStatus.debug) {
+      elements.networkDebugInput.classList.add("network-warning");
+    } else {
+      elements.networkDebugInput.classList.remove("network-warning");
+    }
   }
 }
 
@@ -114,6 +133,23 @@ export function checkFormValidity(state) {
   const chainMatch = !state.walletChainId || !state.networkKeyStatus ||
     !state.networkKeyStatus.chainId ||
     state.walletChainId === state.networkKeyStatus.chainId;
+
+  // Disable form inputs if approve is clicked or tokens are approved
+  const formDisabled = state.approveClicked || state.tokensApproved;
+  elements.tokenContractInput.disabled = formDisabled;
+  elements.tokenAmountInput.disabled = formDisabled;
+
+  // Only disable recipient address after escrow is deployed
+  elements.recipientAddressInput.disabled = state.escrowAddress;
+
+  // Enable start over button only if approve was clicked or tokens already approved
+  if (state.approveClicked || state.tokensApproved || state.escrowAddress) {
+    elements.startOverBtn.disabled = false;
+    elements.startOverStatus.className = "action-status available reload";
+  } else {
+    elements.startOverBtn.disabled = true;
+    elements.startOverStatus.className = "action-status disabled";
+  }
 
   if (state.account) {
     const approveDisabled = !baseFieldsFilled || state.escrowAddress;
@@ -240,7 +276,7 @@ export function checkFormValidity(state) {
       !elements.submitSignalBtn.classList.contains("waiting") &&
       !elements.submitSignalBtn.classList.contains("error")
     ) {
-      elements.submitSignalBtn.textContent = "Submit";
+      elements.submitSignalBtn.textContent = "Execute";
     } else if (elements.submitSignalBtn.classList.contains("verified")) {
       elements.submitSignalBtn.textContent = "Verified";
     }
