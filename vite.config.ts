@@ -7,27 +7,6 @@ export default defineConfig({
   base: "./",
   plugins: [
     {
-      name: "inline-css",
-      enforce: "post",
-      generateBundle(_options, bundle) {
-        for (const [file, chunk] of Object.entries(bundle)) {
-          if (file.endsWith(".html") && chunk.type === "asset") {
-            let html = String(chunk.source);
-            for (const [cssFile, cssChunk] of Object.entries(bundle)) {
-              if (cssFile.endsWith(".css") && cssChunk.type === "asset") {
-                html = html.replace(
-                  new RegExp(`<link[^>]*href="[./]*${cssFile}"[^>]*>`),
-                  `<style>${cssChunk.source}</style>`,
-                );
-                delete bundle[cssFile];
-              }
-            }
-            chunk.source = html;
-          }
-        }
-      },
-    },
-    {
       name: "fetch-artifacts",
       async buildStart() {
         const artifactsDir = "public/artifacts";
@@ -85,6 +64,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         entryFileNames: "[name].js",
+        assetFileNames: "[name].js",
       },
       treeshake: {
         moduleSideEffects: false,
