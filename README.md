@@ -1,49 +1,24 @@
-# Mirage Escrow Client
+# Mirage SGX Client
 
-Simple HTML client for interacting with Mirage escrow contracts on Sepolia
-testnet.
+## Developing
 
-## Setup
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-1. Install dependencies:
+```sh
+npm run dev
 
-```bash
-npm install
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
 ```
 
-2. Build (downloads artifacts and bundles):
+## Building
 
-```bash
+To create a production version of your app:
+
+```sh
 npm run build
 ```
 
-3. Serve the built files:
+You can preview the production build with `npm run preview`.
 
-```bash
-npx serve dist
-```
-
-Or use dev server:
-
-```bash
-npm run dev
-```
-
-4. Open `http://localhost:8000` in a browser with MetaMask installed
-
-## Usage
-
-1. **Connect Wallet** - Connect MetaMask to Sepolia testnet
-2. **Fill Signal Options** - Enter token contract, amounts, recipient, and URLs
-3. **Approve Tokens** - Approve ERC20 tokens for deposit
-4. **Deploy & Bond Escrow** - Deploy new escrow contract and bond to it
-5. **Encrypt & Submit Signal** - Encrypt signal with node's public key and
-   submit to API
-
-## Requirements
-
-- Node.js
-- MetaMask or compatible Web3 wallet
-- Sepolia testnet ETH
-- ERC20 tokens on Sepolia
-- Node API endpoint (default: `http://localhost:3000`)
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
