@@ -21,10 +21,10 @@ export const elements = {
   tokenContractInput: document.getElementById("tokenContract"),
   tokenSymbolInput: document.getElementById("tokenSymbol"),
   tokenAmountInput: document.getElementById("tokenAmount"),
-  rewardAmountInput: document.getElementById("rewardAmount"),
-  rewardAmountLabel: document.getElementById("rewardAmountLabel"),
-  totalAmountInput: document.getElementById("totalAmount"),
-  totalAmountLabel: document.getElementById("totalAmountLabel"),
+  totalAmount: document.getElementById("totalAmount"),
+  feeAmount: document.getElementById("feeAmount"),
+  gasFeeAmount: document.getElementById("gasFeeAmount"),
+  gasFeeTooltip: document.getElementById("gasFeeTooltip"),
   recipientAddressInput: document.getElementById("recipientAddress"),
   nodeApiUrlInput: document.getElementById("nodeApiUrl"),
   transferStatus: document.getElementById("transferStatus"),
@@ -121,7 +121,7 @@ export function showTransferStatus(status, title, message) {
 export function checkFormValidity(state) {
   const baseFieldsFilled = elements.tokenContractInput.value &&
     elements.tokenAmountInput.value &&
-    elements.rewardAmountInput.value &&
+    elements.totalAmount.textContent !== '—' &&
     elements.recipientAddressInput.value;
 
   const signalFieldsFilled = baseFieldsFilled &&

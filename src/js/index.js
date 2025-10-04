@@ -95,13 +95,26 @@ function calculateReward() {
     // TODO: fetch this rate from uniswap contract
     const ethToUsdRate = 4500;
 
+    // Calculate 5% fee
+    const feeUsd = tokenAmount * 0.05;
+
     // Calculate gas cost in ETH: gasPriceWei * 1056000 / 1e18
     const gasCostEth = Number(cachedGasPriceWei * BigInt(1056000)) / 1e18;
 
-    // Convert to USD
-    const rewardUsd = (gasCostEth * ethToUsdRate) + (tokenAmount * 0.05);
+    // Convert gas cost to USD
+    const gasFeeUsd = gasCostEth * ethToUsdRate;
 
-    // Update reward label with full formula, using mwei if gwei is < 0.01
+    // Total reward is fee + gas
+    const rewardUsd = feeUsd + gasFeeUsd;
+
+    // Update fee breakdown display
+    const decimals = cachedDecimals !== null ? Number(cachedDecimals) : 2;
+    elements.feeAmount.textContent = tokenAmount > 0
+      ? feeUsd.toFixed(decimals)
+      : '—';
+    elements.gasFeeAmount.textContent = gasFeeUsd.toFixed(decimals);
+
+    // Update tooltip with current gas price, using mwei if gwei is < 0.01
     let gasPriceDisplay;
     if (cachedGasPriceGwei < 0.01) {
       const gasPriceMwei = cachedGasPriceGwei * 1000;
@@ -109,26 +122,20 @@ function calculateReward() {
     } else {
       gasPriceDisplay = `${cachedGasPriceGwei.toFixed(1)} gwei`;
     }
-
-    elements.rewardAmountLabel.textContent =
-      `5% + (${gasPriceDisplay} × gas / ${ethToUsdRate} USD/ETH)`;
-
-    elements.rewardAmountInput.value = rewardUsd.toFixed(
-      Number(cachedDecimals),
-    );
-    elements.rewardAmountInput.disabled = true;
+    elements.gasFeeTooltip.textContent =
+      `${gasPriceDisplay} × gas / ${ethToUsdRate} USD/ETH`;
 
     // Calculate and display total
     const amount = parseFloat(elements.tokenAmountInput.value) || 0;
     const total = amount + rewardUsd;
 
-    // Update total label with calculation
-    elements.totalAmountLabel.textContent = `Total = ${amount.toFixed(2)} + ${
-      rewardUsd.toFixed(2)
-    }`;
+    elements.totalAmount.textContent = tokenAmount > 0
+      ? total.toFixed(decimals)
+      : '—';
 
-    elements.totalAmountInput.value = total.toFixed(Number(cachedDecimals));
-    elements.totalAmountInput.disabled = true;
+    // Store reward and total as data attributes for use in other functions
+    elements.totalAmount.dataset.reward = rewardUsd.toFixed(decimals);
+    elements.totalAmount.dataset.total = total.toFixed(decimals);
 
     // Update approve title with total
     updateApproveTitle();
@@ -140,17 +147,16 @@ function calculateReward() {
 function updateApproveTitle(symbol = null) {
   const tokenSymbol = symbol || elements.tokenSymbolInput.value;
   const tokenAmount = elements.tokenAmountInput.value;
-  const rewardAmount = elements.rewardAmountInput.value;
+  const totalAmount = elements.totalAmount.dataset.total;
 
   if (!tokenSymbol) {
     elements.approveTitle.textContent = "Approve Tokens";
-  } else if (!tokenAmount || !rewardAmount) {
+  } else if (!tokenAmount || !totalAmount) {
     elements.approveTitle.textContent = `Approve ${tokenSymbol}`;
   } else {
-    const total = parseFloat(tokenAmount) + parseFloat(rewardAmount);
     const decimals = cachedDecimals !== null ? Number(cachedDecimals) : 2;
     elements.approveTitle.textContent = `Approve ${
-      total.toFixed(decimals)
+      parseFloat(totalAmount).toFixed(decimals)
     } ${tokenSymbol}`;
   }
 }
@@ -258,8 +264,6 @@ async function connectWallet() {
         );
         const balanceFormatted = ethers.formatUnits(balance, cachedDecimals);
         elements.tokenAmountInput.placeholder = balanceFormatted;
-        elements.rewardAmountInput.placeholder =
-          (parseFloat(balanceFormatted) * 0.05).toString();
 
         // Only check if already approved and deployed if form has values
         const hasFormValues = elements.tokenAmountInput.value &&
@@ -312,24 +316,19 @@ async function connectWallet() {
           }
         }
 
-        // If we have token amount and reward, check approvals
+        // If we have token amount and total calculated, check approvals
         if (
           !foundContract && elements.tokenAmountInput.value &&
-          elements.rewardAmountInput.value
+          elements.totalAmount.dataset.total
         ) {
           if (nonce === undefined) {
             nonce = await provider.getTransactionCount(account);
           }
 
-          const tokenAmount = parseTokenAmount(
-            elements.tokenAmountInput.value,
+          const totalAmount = parseTokenAmount(
+            elements.totalAmount.dataset.total,
             cachedDecimals,
           );
-          const rewardAmount = parseTokenAmount(
-            elements.rewardAmountInput.value,
-            cachedDecimals,
-          );
-          const totalAmount = BigInt(tokenAmount) + BigInt(rewardAmount);
 
           {
             // Check if approved for next deployment nonce
@@ -389,16 +388,16 @@ async function approveTokens() {
     showStatus("Approving tokens...", "info");
 
     const tokenAddress = elements.tokenContractInput.value;
-    const tokenAmount = elements.tokenAmountInput.value;
-    const rewardAmount = elements.rewardAmountInput.value;
 
     if (cachedTokenAddress !== tokenAddress) {
       cachedTokenAddress = tokenAddress;
       resetTokenDecimals();
       cachedDecimals = await getTokenDecimals(tokenAddress, signer);
     }
-    const totalAmount = parseTokenAmount(tokenAmount, cachedDecimals) +
-      parseTokenAmount(rewardAmount, cachedDecimals);
+    const totalAmount = parseTokenAmount(
+      elements.totalAmount.dataset.total,
+      cachedDecimals,
+    );
 
     // Get current nonce and predict next contract address
     const nonce = await provider.getTransactionCount(account);
@@ -465,8 +464,8 @@ async function deployAndBondEscrow() {
 
     const tokenAddress = elements.tokenContractInput.value;
     const tokenAmount = elements.tokenAmountInput.value;
-    const rewardAmount = elements.rewardAmountInput.value;
     const recipientAddress = elements.recipientAddressInput.value;
+    const rewardAmount = elements.totalAmount.dataset.reward;
 
     if (!tokenAddress || !tokenAmount || !rewardAmount || !recipientAddress) {
       throw new Error("Please fill in all fields");
@@ -548,8 +547,8 @@ async function encryptAndSubmitSignal() {
     const nodeApiUrl = elements.nodeApiUrlInput.value;
     const tokenAddress = elements.tokenContractInput.value;
     const tokenAmount = elements.tokenAmountInput.value;
-    const rewardAmount = elements.rewardAmountInput.value;
     const recipientAddress = elements.recipientAddressInput.value;
+    const rewardAmount = elements.totalAmount.dataset.reward;
 
     showStatus("Encrypting signal...", "info");
 
@@ -717,8 +716,11 @@ elements.startOverBtn.addEventListener("click", () => {
   // Reset form inputs
   elements.tokenAmountInput.value = "";
   elements.recipientAddressInput.value = "";
-  elements.rewardAmountInput.value = "";
-  elements.totalAmountInput.value = "";
+  elements.feeAmount.textContent = "—";
+  elements.gasFeeAmount.textContent = "—";
+  elements.totalAmount.textContent = "—";
+  elements.totalAmount.dataset.reward = "";
+  elements.totalAmount.dataset.total = "";
 
   // Reset approve button
   elements.approveBtn.classList.remove("verified", "waiting", "error");
@@ -762,7 +764,6 @@ elements.startOverBtn.addEventListener("click", () => {
 [
   elements.tokenContractInput,
   elements.tokenAmountInput,
-  elements.rewardAmountInput,
   elements.recipientAddressInput,
   elements.nodeApiUrlInput,
 ].forEach((input) => {
@@ -813,4 +814,12 @@ elements.tokenContractInput.addEventListener("input", fetchTokenInfo);
 elements.tokenAmountInput.addEventListener("input", () => {
   validateTokenInput(elements.tokenAmountInput);
   calculateReward();
+  checkFormValidity({
+    account,
+    escrowAddress,
+    tokensApproved,
+    networkKeyStatus,
+    walletChainId,
+    approveClicked,
+  });
 });
