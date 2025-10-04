@@ -4,6 +4,7 @@ import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 
 export default defineConfig({
+  base: "./",
   plugins: [
     {
       name: "inline-css",
