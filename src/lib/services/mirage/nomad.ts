@@ -40,11 +40,15 @@ export async function encryptAndSubmitSignal(
 	const signalJson = JSON.stringify(signal);
 	const signalBytes = new TextEncoder().encode(signalJson);
 
-	// Convert hex public key to Buffer
-	const publicKeyBuffer = Buffer.from(globalKeyHex.replace('0x', ''), 'hex');
+	// Convert hex public key to Uint8Array
+	const publicKeyHex = globalKeyHex.replace('0x', '');
+	const publicKeyBuffer = new Uint8Array(publicKeyHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
 
 	// Encrypt using eciesjs
 	const encrypted = encrypt(publicKeyBuffer, signalBytes);
+
+	// Convert encrypted Uint8Array to hex string
+	const encryptedHex = '0x' + Array.from(encrypted).map(b => b.toString(16).padStart(2, '0')).join('');
 
 	// Submit to node
 	const response = await fetch(`${nodeApiUrl}/signal`, {
@@ -52,7 +56,7 @@ export async function encryptAndSubmitSignal(
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify('0x' + Buffer.from(encrypted).toString('hex'))
+		body: JSON.stringify(encryptedHex)
 	});
 
 	if (!response.ok) {
